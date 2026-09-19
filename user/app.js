@@ -4,27 +4,36 @@
  */
 
 /**
- * Switch between "Create Case" and "My Queue" Views
- * @param {'create'|'queue'} v
+ * Switch between "Create Case", "My Queue", and "Rooms" Views
+ * @param {'create'|'queue'|'rooms'} v
  */
 function switchView(v) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   const viewCreate = document.getElementById('viewCreate');
   const viewQueue = document.getElementById('viewQueue');
+  const viewRooms = document.getElementById('viewRooms');
   const tabCreate = document.getElementById('tabCreate');
   const tabQueue = document.getElementById('tabQueue');
+  const tabRooms = document.getElementById('tabRooms');
 
   if (viewCreate) viewCreate.style.display = 'none';
   if (viewQueue) viewQueue.style.display = 'none';
+  if (viewRooms) viewRooms.style.display = 'none';
 
   if (v === 'create') {
     if (tabCreate) tabCreate.classList.add('active');
     if (viewCreate) viewCreate.style.display = 'block';
-  } else {
+  } else if (v === 'queue') {
     if (tabQueue) tabQueue.classList.add('active');
     if (viewQueue) viewQueue.style.display = 'block';
     if (typeof renderMyQueue === 'function') {
       renderMyQueue();
+    }
+  } else if (v === 'rooms') {
+    if (tabRooms) tabRooms.classList.add('active');
+    if (viewRooms) viewRooms.style.display = 'block';
+    if (typeof renderUserRoomGrid === 'function') {
+      renderUserRoomGrid();
     }
   }
 }

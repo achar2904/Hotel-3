@@ -47,6 +47,16 @@ async function checkAuth() {
     if (dropName) dropName.innerText = currentUser.name;
     if (dropDept) dropDept.innerText = `แผนก${getDeptTh(currentUser.dept)} • #${currentUser.code}`;
 
+    // Permission: Allow Front Office (FRONT), Admin, and Owner to view 422 rooms
+    const tabRooms = document.getElementById('tabRooms');
+    if (tabRooms) {
+      if (currentUser.dept === 'FRONT' || currentUser.dept === 'ALL' || currentUser.role === 'ADMIN' || currentUser.role === 'OWNER') {
+        tabRooms.style.display = 'inline-flex';
+      } else {
+        tabRooms.style.display = 'none';
+      }
+    }
+
     // Auto-navigate based on department specialty
     if (currentUser.dept === 'ENG' || currentUser.dept === 'IT') {
       if (typeof switchView === 'function') switchView('queue');
