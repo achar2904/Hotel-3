@@ -287,6 +287,30 @@
         </div>
       </div>
 
+      <!-- Front Office Status Override Controls (Admin-level action) -->
+      <div id="userModalAdminControls" style="background:#FFF7ED; border:1px solid #FED7AA; border-radius:var(--r-md); padding:14px 16px; margin-bottom:14px;">
+        <div style="font-size:0.9rem; font-weight:700; color:#9A3412; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+          กำหนดสถานะห้องพักใน MySQL (Front Office / Admin Action)
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+          <label style="display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:var(--r-md); border:1px solid var(--border-subtle); background:#FFF; cursor:pointer; font-size:0.85rem; font-weight:600;">
+            <input type="radio" name="userRoomStatusRadio" value="AVAILABLE" id="userRadioAvail">
+            <span style="color:#10B981;">เปิดใช้งาน (AVAILABLE)</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:var(--r-md); border:1px solid var(--border-subtle); background:#FFF; cursor:pointer; font-size:0.85rem; font-weight:600;">
+            <input type="radio" name="userRoomStatusRadio" value="MAINTENANCE" id="userRadioMaint">
+            <span style="color:#EF4444;">ปิดซ่อม (MAINTENANCE)</span>
+          </label>
+        </div>
+        <div class="form-row" style="margin-bottom:10px;">
+          <label class="form-lbl" style="color:#7C2D12; font-size:0.82rem;">หมายเหตุการเปลี่ยนสถานะ (บันทึกลงฐานข้อมูล):</label>
+          <input type="text" class="inp-box" id="userModalStatusReasonInp" placeholder="เช่น แขกเช็คเอาท์แล้ว-ห้องพร้อมขาย, สั่งปิดซ่อมแอร์..." style="background:#FFF; font-size:0.85rem;">
+        </div>
+        <button type="button" class="btn-send" id="btnSaveUserRoomStatus" onclick="saveUserRoomStatusChange()" style="background:#C2410C; padding:10px; font-size:0.88rem; width:100%;">
+          บันทึกการเปลี่ยนแปลงสถานะห้องพักลง MySQL
+        </button>
+      </div>
+
       <!-- Quick Action: Create Case for this room -->
       <div style="margin-bottom:14px;">
         <button type="button" class="btn-send" id="btnQuickReportRoom" onclick="quickReportForRoom()" style="background:#2563EB; padding:10px; font-size:0.88rem;">

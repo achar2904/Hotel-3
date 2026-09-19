@@ -181,7 +181,67 @@ function openUserRoomDetail(roomNo) {
     }
   }
 
+  const radioAvail = document.getElementById('userRadioAvail');
+  const radioMaint = document.getElementById('userRadioMaint');
+  const reasonInp = document.getElementById('userModalStatusReasonInp');
+
+  if (radioAvail) radioAvail.checked = (r.status === 'AVAILABLE');
+  if (radioMaint) radioMaint.checked = (r.status === 'MAINTENANCE');
+  if (reasonInp) reasonInp.value = r.closed_reason || '';
+
   if (modal) modal.classList.add('show');
+}
+
+/**
+ * Save Room Status Override to MySQL (Front Office / Admin Action)
+ */
+async function saveUserRoomStatusChange() {
+  if (!selectedUserRoom) return;
+  if (currentUser.dept !== 'FRONT' && currentUser.role !== 'ADMIN' && currentUser.role !== 'OWNER' && currentUser.dept !== 'ALL') {
+    alert('สิทธิ์เฉพาะแผนกฟร้อนท์ (Front Office) และแอดมินเท่านั้นค่ะ');
+    return;
+  }
+
+  const radio = document.querySelector('input[name="userRoomStatusRadio"]:checked');
+  const newStatus = radio ? radio.value : 'AVAILABLE';
+  const reasonInp = document.getElementById('userModalStatusReasonInp')?.value.trim() || '';
+  const defaultReason = (newStatus === 'AVAILABLE') ? 'ฟร้อนท์เปิดห้องพักพร้อมใช้งาน สภาพสมบูรณ์' : 'ฟร้อนท์สั่งปิดห้องพัก/แจ้งซ่อมบำรุง';
+  const reason = reasonInp || defaultReason;
+
+  const btn = document.getElementById('btnSaveUserRoomStatus');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = 'กำลังบันทึกลง MySQL...';
+  }
+
+  try {
+    const res = await fetch('/api/rooms/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        roomNo: selectedUserRoom,
+        status: newStatus,
+        reason
+      })
+    });
+
+    const result = await res.json();
+    if (!result.success) {
+      alert('เกิดข้อผิดพลาด: ' + (result.message || 'ไม่สามารถบันทึกได้ค่ะ'));
+      return;
+    }
+
+    await renderUserRoomGrid();
+    openUserRoomDetail(selectedUserRoom);
+    alert(`บันทึกสถานะห้อง ${selectedUserRoom} ลงฐานข้อมูล MySQL เรียบร้อยแล้วค่ะ`);
+  } catch (err) {
+    alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์ค่ะ');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = 'บันทึกการเปลี่ยนแปลงสถานะห้องพักลง MySQL';
+    }
+  }
 }
 
 /**

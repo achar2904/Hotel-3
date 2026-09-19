@@ -188,11 +188,12 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // 5. POST /api/rooms/status — Admin status override in MySQL
+  // 5. POST /api/rooms/status — Room status override in MySQL (Admin & Front Office)
   if (method === 'POST' && reqPath === '/api/rooms/status') {
     const session = getSession(req);
-    if (!session || session.user.role !== 'ADMIN') {
-      return sendJson(res, 403, { success: false, message: 'สิทธิ์เฉพาะแอดมินเท่านั้นค่ะ' });
+    const isAllowed = session && (session.user.role === 'ADMIN' || session.user.dept === 'FRONT');
+    if (!isAllowed) {
+      return sendJson(res, 403, { success: false, message: 'สิทธิ์เฉพาะแอดมินและแผนกฟร้อนท์เท่านั้นค่ะ' });
     }
 
     try {
