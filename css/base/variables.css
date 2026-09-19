@@ -1,0 +1,66 @@
+/**
+ * Hotel Operations System - Design Tokens & Variables
+ * Standardized for Modular CSS Architecture
+ */
+
+:root {
+  /* Typography Tokens */
+  --font-th: 'Sarabun', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-en: 'Plus Jakarta Sans', var(--font-th);
+
+  /* Surface & Background Colors */
+  --bg-body: #F8FAFC;
+  --surface-card: #FFFFFF;
+  --bg-dark: #0F172A;
+  --card-bg-dark: #1E293B;
+  --border-subtle: #E2E8F0;
+  --border-focus: #94A3B8;
+
+  /* Typography Colors */
+  --text-main: #0F172A;
+  --text-muted: #64748B;
+  --text-sub: #94A3B8;
+  --text-light: #F8FAFC;
+
+  /* Brand & Accent */
+  --accent: #C2410C;
+  --accent-hover: #9A3412;
+  --accent-soft: #FFF7ED;
+  --brand-orange: #EA580C;
+  --brand-orange-light: #FB923C;
+
+  /* Department Colors & Surfaces */
+  --dept-front: #2563EB;
+  --dept-front-bg: #EFF6FF;
+  --dept-hk: #0D9488;
+  --dept-hk-bg: #F0FDFA;
+  --dept-eng: #D97706;
+  --dept-eng-bg: #FFFBEB;
+  --dept-it: #4F46E5;
+  --dept-it-bg: #EEF2FF;
+  --dept-admin: #C2410C;
+  --dept-admin-bg: #FFF7ED;
+
+  /* Status Colors */
+  --status-new: #EF4444;
+  --status-new-bg: #FEF2F2;
+  --status-prog: #D97706;
+  --status-prog-bg: #FFFBEB;
+  --status-wait: #8B5CF6;
+  --status-wait-bg: #F5F3FF;
+  --status-closed: #10B981;
+  --status-closed-bg: #ECFDF5;
+
+  /* Border Radii */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 16px;
+  --r-pill: 9999px;
+
+  /* Elevation Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 12px -2px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 12px 24px -6px rgba(0, 0, 0, 0.15);
+  --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}

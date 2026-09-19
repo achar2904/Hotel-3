@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hotel Ops — ศูนย์ควบคุมแอดมินและผู้บริหาร (Admin & Owner Portal) - Hotel 3</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="admin-header">
+    <div class="brand-wrap brand-group">
+      <div class="brand-logo brand-badge">H</div>
+      <div class="brand-details">
+        <h1 class="brand-title">Hotel Executive & Admin Control</h1>
+        
+      </div>
+    </div>
+    <div class="header-dropdown-wrap" id="adminDropdownWrap">
+      <button type="button" class="header-dropdown-btn" id="adminDropdownBtn" onclick="toggleAdminDropdown(event)" aria-label="เมนูผู้ใช้งาน" aria-expanded="false">
+        <div class="user-meta header-user-meta">
+          <span class="user-meta-txt" id="adminUserTxt">กำลังโหลด...</span>
+          <span class="role-indicator-badge role-ADMIN" id="roleBadge">ADMIN</span>
+        </div>
+        <span class="dropdown-chevron">▾</span>
+      </button>
+
+      <div class="header-dropdown-menu" id="adminDropdownMenu">
+        <div class="dropdown-user-header">
+          <div class="dropdown-user-name" id="dropdownAdminName">กำลังโหลด...</div>
+          <div class="dropdown-user-dept" id="dropdownAdminRole">ADMIN</div>
+        </div>
+        <div class="dropdown-divider"></div>
+        <button type="button" class="dropdown-item logout-item" onclick="doLogout()">
+          <span>ออกจากระบบ</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Container -->
+  <div class="admin-container">
+
+    <!-- Owner Notice Banner -->
+    <div class="owner-banner" id="ownerBanner">
+      <span><strong>โหมดผู้บริหาร (Owner):</strong> ท่านสามารถตรวจสอบรายงาน แดชบอร์ดเคส 4 แผนก สถิติห้องพัก 422 ห้อง และผลงานของบุคลากรได้แบบเรียลไทม์ (โหมดอ่านอย่างเดียว ปิดสิทธิ์การแก้ไขและสมัครสมาชิกเพื่อความปลอดภัยของข้อมูล)</span>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+      <button class="nav-tab-item active" onclick="switchNav('cases')">เคสทั้งหมดรวมทุกแผนก</button>
+      <button class="nav-tab-item" onclick="switchNav('daily')">แดชบอร์ดเคสรายวัน (4 แผนก)</button>
+      <button class="nav-tab-item" onclick="switchNav('rooms')">สถานะห้องพัก (422 ห้อง)</button>
+      <button class="nav-tab-item" onclick="switchNav('staff')">ภาระงานบุคลากรรายบุคคล</button>
+      <button class="nav-tab-item" id="tabUsers" onclick="switchNav('users')">จัดการผู้ใช้งานและสิทธิ์ (Users)</button>
+    </div>
+
+    <!-- ================= VIEW 1: MASTER ALL-CASES ================= -->
+    <section id="viewCases" class="panel">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">ศูนย์รวมเคสทั้งหมดของทุกแผนก (MySQL Master Table)</h2>
+          <span style="font-size:0.8rem; color:var(--text-muted);">ข้อมูลบันทึกจริงในฐานข้อมูล MySQL ป้องกันการสูญหาย</span>
+        </div>
+        <button class="btn-action" onclick="renderMasterTable()">รีเฟรชข้อมูล</button>
+      </div>
+
+      <!-- KPI Summary -->
+      <div class="kpi-row">
+        <div class="kpi-box">
+          <div class="kpi-lbl">เคสทั้งหมด</div>
+          <div class="kpi-num" id="kpiTotal">0</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-lbl">รอรับเรื่อง (NEW)</div>
+          <div class="kpi-num" style="color:var(--status-new);" id="kpiNew">0</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-lbl">กำลังทำ (IN PROGRESS)</div>
+          <div class="kpi-num" style="color:var(--status-prog);" id="kpiProg">0</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-lbl">รออะไหล่ (PAUSED)</div>
+          <div class="kpi-num" style="color:var(--status-wait);" id="kpiWait">0</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-lbl">ปิดงานแล้ว (CLOSED)</div>
+          <div class="kpi-num" style="color:var(--status-closed);" id="kpiClosed">0</div>
+        </div>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="filter-bar">
+        <input type="text" class="search-inp" id="searchInp" placeholder="ค้นหาเลขเคส, ห้อง, อาการ, ชื่อคนแจ้ง, ชื่อช่าง..." oninput="filterCasesUI()">
+        
+        <button class="filter-pill active" onclick="setDeptFilter('ALL', this)">ทุกแผนก</button>
+        <button class="filter-pill" onclick="setDeptFilter('ENG', this)">ช่าง</button>
+        <button class="filter-pill" onclick="setDeptFilter('HK', this)">แม่บ้าน</button>
+        <button class="filter-pill" onclick="setDeptFilter('IT', this)">ไอที</button>
+        <button class="filter-pill" onclick="setDeptFilter('FRONT', this)">ฟร้อนท์</button>
+      </div>
+
+      <!-- Data Table -->
+      <div class="table-responsive">
+        <table class="data-tbl">
+          <thead>
+            <tr>
+              <th>รหัสเคส & เวลา</th>
+              <th>จุดเกิดเหตุ</th>
+              <th>เส้นทางงาน</th>
+              <th>หัวข้อปัญหา</th>
+              <th>ผู้แจ้ง (ต้นทาง)</th>
+              <th>ผู้รับผิดชอบ (รายบุคคล)</th>
+              <th>สถานะ</th>
+              <th class="col-action">การจัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="masterTableBody">
+            <tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">กำลังโหลดข้อมูลจาก MySQL...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================= VIEW 2: DAILY DASHBOARDS ================= -->
+    <section id="viewDaily" class="panel" style="display:none;">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">สรุปแดชบอร์ดเคสรายวันแยก 4 แผนก (Daily Departmental KPI)</h2>
+          <span style="font-size:0.8rem; color:var(--text-muted);">คำนวณสดจากตาราง Cases ในฐานข้อมูล MySQL</span>
+        </div>
+        <button class="btn-action" onclick="renderDailyStats()">รีเฟรชสถิติ</button>
+      </div>
+
+      <div class="dept-daily-grid">
+        <!-- Front Office -->
+        <div class="dept-kpi-card border-front">
+          <div class="dept-kpi-head">
+            <span>แผนกฟร้อนท์ (Front Office)</span>
+            <span style="font-size:0.8rem; color:var(--dept-front);" id="dailyFrontRate">100%</span>
+          </div>
+          <div class="dept-stat-row"><span>เคสในระบบ:</span><strong id="dailyFrontTotal">0 เคส</strong></div>
+          <div class="dept-stat-row"><span>กำลังดำเนินการ:</span><strong id="dailyFrontProg">0 เคส</strong></div>
+          <div class="dept-stat-row"><span>ปิดงานสำเร็จ:</span><strong style="color:#10B981;" id="dailyFrontClosed">0 เคส</strong></div>
+        </div>
+
+        <!-- Housekeeping -->
+        <div class="dept-kpi-card border-hk">
+          <div class="dept-kpi-head">
+            <span>แผนกแม่บ้าน (Housekeeping)</span>
+            <span style="font-size:0.8rem; color:var(--dept-hk);" id="dailyHkRate">100%</span>
+          </div>
+          <div class="dept-stat-row"><span>เคสในระบบ:</span><strong id="dailyHkTotal">0 เคส</strong></div>
+          <div class="dept-stat-row"><span>กำลังดำเนินการ:</span><strong id="dailyHkProg">0 เคส</strong></div>
+          <div class="dept-stat-row"><span>ปิดงานสำเร็จ:</span><strong style="color:#10B981;" id="dailyHkClosed">0 เคส</strong></div>
+        </div>
+
+        <!-- Engineering -->
+        <div class="dept-kpi-card border-eng">
+          <div class="dept-kpi-head">
+            <span>แผนกช่าง (Engineering)</span>
+            <span style="font-size:0.8rem; color:var(--dept-eng);" id="dailyEngRate">100%</span>
+          </div>
+          <div class="dept-stat-row"><span>เคสในระบบ:</span><strong id="dailyEngTotal">0 เคส</strong></div>
+          <div class="dept-stat-row"><span>กำลังดำเนินการ:</span><strong id="dailyEngProg">0 เคส</strong></div>
+          <div class="dept-stat-row"><span>ปิดงานสำเร็จ:</span><strong style="color:#10B981;" id="dailyEngClosed">0 เคส</strong></div>
+        </div>
+
+        <!-- IT -->
+        <div class="dept-kpi-card border-it">
+          <div class="dept-kpi-head">
+            <span>แผนกไอที (IT Support)</span>
+            <span style="font-size:0.8rem; color:var(--dept-it);" id="dailyItRate">100%</span>
+          </div>
+          <div class="dept-stat-row"><span>เคสในระบบ:</span><strong id="dailyItTotal">0 เคส</strong></div>
+          <div class="dept-stat-row"><span>กำลังดำเนินการ:</span><strong id="dailyItProg">0 เคส</strong></div>
+          <div class="dept-stat-row"><span>ปิดงานสำเร็จ:</span><strong style="color:#10B981;" id="dailyItClosed">0 เคส</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW 3: 422 ROOMS INVENTORY ================= -->
+    <section id="viewRooms" class="panel" style="display:none;">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">ผังห้องพัก 422 ห้อง (MySQL Live Room Inventory)</h2>
+          <span style="font-size:0.8rem; color:var(--text-muted);">ดึงข้อมูล 422 ห้องจากตาราง Rooms ใน MySQL คลิกเพื่อตรวจสอบหรือเปลี่ยนสถานะ</span>
+        </div>
+        <button class="btn-action" onclick="renderRoomGrid()">รีเฟรชผังห้อง</button>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="kpi-row">
+        <div class="kpi-box">
+          <div class="kpi-lbl">จำนวนห้องทั้งหมด (MySQL)</div>
+          <div class="kpi-num" id="roomKpiTotal">422</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-lbl">ห้องพร้อมใช้งาน (AVAILABLE)</div>
+          <div class="kpi-num" style="color:#10B981;" id="roomKpiAvail">0</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-lbl">ห้องปิดซ่อมบำรุง (MAINTENANCE)</div>
+          <div class="kpi-num" style="color:#EF4444;" id="roomKpiMaint">0</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-lbl">อัตราความพร้อมขาย (AVAILABILITY)</div>
+          <div class="kpi-num" style="color:#0284C7;" id="roomKpiRate">0%</div>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar" style="margin-bottom:12px; gap:8px;">
+        <input type="text" class="search-inp" id="searchRoomInp" placeholder="ค้นหาเลขห้อง (เช่น 102, 201, 305)..." oninput="filterRoomsUI()" style="max-width:240px; min-width:180px;">
+        
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button class="filter-pill active" onclick="setRoomFloorFilter('ALL', this)">ทุกชั้น (422)</button>
+          <button class="filter-pill" onclick="setRoomFloorFilter(1, this)">ชั้น 1</button>
+          <button class="filter-pill" onclick="setRoomFloorFilter(2, this)">ชั้น 2</button>
+          <button class="filter-pill" onclick="setRoomFloorFilter(3, this)">ชั้น 3</button>
+          <button class="filter-pill" onclick="setRoomFloorFilter(4, this)">ชั้น 4</button>
+          <button class="filter-pill" onclick="setRoomFloorFilter(5, this)">ชั้น 5</button>
+        </div>
+
+        <div style="display:flex; gap:6px; margin-left:auto; flex-wrap:wrap;">
+          <button class="filter-pill active" onclick="setRoomStatusFilter('ALL', this)">ทั้งหมด</button>
+          <button class="filter-pill" onclick="setRoomStatusFilter('AVAILABLE', this)">พร้อมใช้</button>
+          <button class="filter-pill" onclick="setRoomStatusFilter('MAINTENANCE', this)">ปิดซ่อม</button>
+        </div>
+      </div>
+
+      <!-- Status Legend & Count -->
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; font-size:0.82rem; color:var(--text-muted); flex-wrap:wrap; gap:8px;">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <span><strong>คำแนะนำ:</strong> คลิกปุ่มห้องเพื่อเปิดดูรายละเอียด & กำหนดสถานะ</span>
+          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; border-radius:50%; background:#10B981;"></span> พร้อมใช้งาน</span>
+          <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; border-radius:50%; background:#EF4444;"></span> ปิดซ่อม/ติดปัญหา</span>
+        </div>
+        <div id="roomCountBadge" style="font-weight:700; color:var(--text-main);">
+          แสดง 422 ห้อง
+        </div>
+      </div>
+
+      <!-- 422 Interactive Room Buttons Grid Container -->
+      <div class="room-grid" id="roomGridContainer"></div>
+    </section>
+
+    <!-- ================= VIEW 4: STAFF WORKLOAD ================= -->
+    <section id="viewStaff" class="panel" style="display:none;">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">ติดตามภาระงานบุคลากรรายบุคคล (Staff Workload Tracker)</h2>
+          <span style="font-size:0.8rem; color:var(--text-muted);">คำนวณสดจากฐานข้อมูล MySQL เพื่อความโปร่งใส</span>
+        </div>
+        <button class="btn-action" onclick="renderStaffTable()">รีเฟรชภาระงาน</button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-tbl">
+          <thead>
+            <tr>
+              <th>รหัสพนักงาน (6 หลัก)</th>
+              <th>ชื่อ-นามสกุล</th>
+              <th>แผนกสังกัด</th>
+              <th>งานปัจจุบันที่กำลังทำ</th>
+              <th>ค้างงาน (Active)</th>
+              <th>ปิดงานสำเร็จ (Done)</th>
+              <th>เบอร์โทรภายใน</th>
+            </tr>
+          </thead>
+          <tbody id="staffTblBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================= VIEW 5: USER & ACCESS MANAGEMENT ================= -->
+    <section id="viewUsers" class="panel" style="display:none;">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">จัดการบัญชีผู้ใช้งาน สิทธิ์ และรหัสผ่าน (User & Access Management)</h2>
+          <span style="font-size:0.8rem; color:var(--text-muted);">ดูรายชื่อผู้ใช้งานทั้งหมดจากตาราง users ใน MySQL, แก้ไขระดับสิทธิ์ (Role), แผนก และรีเซ็ตรหัสผ่าน PIN 6 หลัก</span>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button class="btn-action" onclick="loadUsersList()">รีเฟรชรายชื่อ</button>
+          <button class="btn-action" id="btnOpenNewUser" onclick="openNewUserModal()" style="background:#0F172A; color:#FFFFFF;">เพิ่มพนักงานใหม่</button>
+        </div>
+      </div>
+
+      <!-- Search & Filters -->
+      <div style="margin-bottom:16px; display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+        <input type="text" id="searchUserInp" style="flex:1; min-width:200px; padding:8px 12px; border:1px solid var(--border-subtle); border-radius:var(--r-md); font-family:inherit; font-size:0.85rem;" placeholder="ค้นหารหัสพนักงาน 6 หลัก หรือชื่อ..." oninput="filterUsersUI()">
+        <select id="filterUserDept" style="padding:8px 12px; border:1px solid var(--border-subtle); border-radius:var(--r-md); font-family:inherit; font-size:0.85rem;" onchange="filterUsersUI()">
+          <option value="ALL">ทุกแผนก</option>
+          <option value="FRONT">แผนกฟร้อนท์ (FRONT)</option>
+          <option value="ENG">แผนกช่าง (ENG)</option>
+          <option value="HK">แผนกแม่บ้าน (HK)</option>
+          <option value="IT">แผนกไอที (IT)</option>
+          <option value="ALL_DEPT">บริหารส่วนกลาง (ALL)</option>
+        </select>
+        <select id="filterUserRole" style="padding:8px 12px; border:1px solid var(--border-subtle); border-radius:var(--r-md); font-family:inherit; font-size:0.85rem;" onchange="filterUsersUI()">
+          <option value="ALL">ทุกระดับสิทธิ์ (Roles)</option>
+          <option value="ADMIN">ADMIN — ผู้ดูแลระบบ</option>
+          <option value="OWNER">OWNER — ผู้บริหาร</option>
+          <option value="DEPT_HEAD">DEPT_HEAD — หัวหน้าแผนก</option>
+          <option value="STAFF">STAFF — พนักงานทั่วไป</option>
+        </select>
+      </div>
+
+      <!-- Users Table -->
+      <div class="table-responsive">
+        <table class="data-tbl">
+          <thead>
+            <tr>
+              <th>รหัสพนักงาน (6 หลัก)</th>
+              <th>ชื่อ - นามสกุล</th>
+              <th>แผนกสังกัด</th>
+              <th>สิทธิ์การใช้งาน (Role)</th>
+              <th>เบอร์โทรศัพท์</th>
+              <th>สถานะบัญชี</th>
+              <th>เข้าสู่ระบบล่าสุด</th>
+              <th class="col-action" id="thUserActions">การจัดการสิทธิ์ & PIN</th>
+            </tr>
+          </thead>
+          <tbody id="userTblBody">
+            <tr><td colspan="8" style="text-align:center; padding:24px; color:var(--text-muted);">กำลังโหลดรายชื่อผู้ใช้จาก MySQL...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Modal: Edit User Role & Info -->
+    <div class="modal-wrap" id="modalEditUser">
+      <div class="modal-box">
+        <h3 style="font-size:1.15rem; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+          <span>แก้ไขข้อมูลและสิทธิ์ผู้ใช้งาน</span>
+          <span class="tag" id="editUserCodeBadge">#000000</span>
+        </h3>
+        <input type="hidden" id="editUserCode">
+        <div class="form-ctrl" style="margin-bottom:12px;">
+          <label>ชื่อ - นามสกุล:</label>
+          <input type="text" id="editUserName" placeholder="ชื่อ-นามสกุลพนักงาน">
+        </div>
+        <div class="form-ctrl" style="margin-bottom:12px;">
+          <label>แผนกสังกัด:</label>
+          <select id="editUserDept">
+            <option value="FRONT">แผนกฟร้อนท์ (FRONT)</option>
+            <option value="ENG">แผนกช่าง (ENG)</option>
+            <option value="HK">แผนกแม่บ้าน (HK)</option>
+            <option value="IT">แผนกไอที (IT)</option>
+            <option value="ALL">บริหารส่วนกลาง / ผู้บริหาร (ALL)</option>
+          </select>
+        </div>
+        <div class="form-ctrl" style="margin-bottom:12px;">
+          <label>ระดับสิทธิ์การเข้าใช้งาน (Role):</label>
+          <select id="editUserRole">
+            <option value="staff">STAFF — พนักงานทั่วไป (เข้าหน้า /user.html)</option>
+            <option value="dept_head">DEPT_HEAD — หัวหน้าแผนก (เข้าหน้า /user.html)</option>
+            <option value="admin">ADMIN — ผู้ดูแลระบบ (สิทธิ์เต็มหน้า /admin.html)</option>
+            <option value="owner">OWNER — ผู้บริหาร (ดูรายงานหน้า /admin.html)</option>
+          </select>
+        </div>
+        <div class="form-ctrl" style="margin-bottom:12px;">
+          <label>เบอร์โทรศัพท์ภายใน / มือถือ:</label>
+          <input type="text" id="editUserPhone" placeholder="เช่น 1001 หรือ 081-xxx-xxxx">
+        </div>
+        <div class="form-ctrl" style="margin-bottom:18px;">
+          <label>สถานะบัญชีผู้ใช้:</label>
+          <select id="editUserStatus">
+            <option value="1">เปิดใช้งานปกติ (Active)</option>
+            <option value="0">ระงับการใช้งาน (Suspended)</option>
+          </select>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" class="btn-action" onclick="closeModal('modalEditUser')" style="background:#F1F5F9; color:#475569;">ยกเลิก</button>
+          <button type="button" class="btn-action" id="btnSaveUserEdit" onclick="saveUserEdit()" style="background:#2563EB; color:#FFFFFF;">บันทึกการเปลี่ยนแปลง</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Reset User PIN -->
+    <div class="modal-wrap" id="modalResetPin">
+      <div class="modal-box">
+        <h3 style="font-size:1.15rem; font-weight:700; margin-bottom:12px; color:#DC2626; display:flex; align-items:center; gap:8px;">
+          <span>รีเซ็ตรหัสผ่าน PIN พนักงาน</span>
+        </h3>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px;" id="resetPinTargetInfo">
+          กำลังรีเซ็ตรหัสผ่านให้กับ: <strong>-</strong>
+        </p>
+        <input type="hidden" id="resetPinCode">
+        <div class="form-ctrl" style="margin-bottom:12px;">
+          <label>รหัสผ่าน PIN ใหม่ (ตัวเลข 6 หลัก):</label>
+          <input type="text" id="newPinInput" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" placeholder="ระบุ PIN 6 หลัก เช่น 123456" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        </div>
+        <div style="margin-bottom:18px;">
+          <button type="button" class="btn-action btn-sm" onclick="document.getElementById('newPinInput').value='123456'" style="background:#F8FAFC; border:1px solid #CBD5E1; color:#334155; font-size:0.78rem;">
+            ตั้งเป็นรหัสเริ่มต้นมาตรฐาน (123456)
+          </button>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" class="btn-action" onclick="closeModal('modalResetPin')" style="background:#F1F5F9; color:#475569;">ยกเลิก</button>
+          <button type="button" class="btn-action" id="btnConfirmResetPin" onclick="confirmResetPin()" style="background:#DC2626; color:#FFFFFF;">ยืนยันรีเซ็ตรหัสผ่าน</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: New User -->
+    <div class="modal-wrap" id="modalNewUser">
+      <div class="modal-box">
+        <h3 style="font-size:1.15rem; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+          <span>เพิ่มพนักงานใหม่ลงระบบ (MySQL)</span>
+        </h3>
+        <div class="form-ctrl" style="margin-bottom:12px;">
+          <label>รหัสพนักงาน (ตัวเลข 6 หลัก): *</label>
+          <input type="text" id="newCode" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" placeholder="เช่น 200103 หรือ 100103" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        </div>
+        <div class="form-ctrl" style="margin-bottom:12px;">
+          <label>รหัสผ่านเริ่มต้น PIN (ตัวเลข 6 หลัก): *</label>
+          <input type="text" id="newPin" maxlength="6" value="123456" pattern="[0-9]{6}" inputmode="numeric" placeholder="123456" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        </div>
+        <div class="form-ctrl" style="margin-bottom:12px;">
+          <label>ชื่อ - นามสกุล: *</label>
+          <input type="text" id="newName" placeholder="เช่น นายสมบูรณ์ งานดี">
+        </div>
+        <div class="form-ctrl" style="margin-bottom:12px;">
+          <label>แผนกสังกัด: *</label>
+          <select id="newDept">
+            <option value="ENG">แผนกช่าง (Engineering)</option>
+            <option value="HK">แผนกแม่บ้าน (Housekeeping)</option>
+            <option value="IT">แผนกไอที (IT)</option>
+            <option value="FRONT">แผนกฟร้อนท์ (Front Office)</option>
+            <option value="ALL">บริหารส่วนกลาง (ALL)</option>
+          </select>
+        </div>
+        <div class="form-ctrl" style="margin-bottom:12px;">
+          <label>ระดับสิทธิ์ (Role):</label>
+          <select id="newRole">
+            <option value="staff">STAFF — พนักงานปฏิบัติงาน</option>
+            <option value="dept_head">DEPT_HEAD — หัวหน้าแผนก</option>
+            <option value="admin">ADMIN — ผู้ดูแลระบบ</option>
+            <option value="owner">OWNER — ผู้บริหาร</option>
+          </select>
+        </div>
+        <div class="form-ctrl" style="margin-bottom:18px;">
+          <label>เบอร์โทรศัพท์ภายใน / มือถือ:</label>
+          <input type="text" id="newPhone" placeholder="เช่น 2003 หรือ 089-xxx-xxxx">
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" class="btn-action" onclick="closeModal('modalNewUser')" style="background:#F1F5F9; color:#475569;">ยกเลิก</button>
+          <button type="button" class="btn-action" id="btnSaveNewUser" onclick="saveNewUser()" style="background:#059669; color:#FFFFFF;">บันทึกพนักงานใหม่</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Re-route Modal -->
+  <div class="modal-wrap" id="modalReroute">
+    <div class="modal-box">
+      <button type="button" class="modal-close-btn-red" onclick="closeModal('modalReroute')" aria-label="ปิดหน้าต่าง" title="ปิดหน้าต่าง">✕</button>
+      <h3 style="font-size:1.15rem; font-weight:700; margin-bottom:12px; padding-right:32px;">Re-route สลับแผนกปลายทาง (Admin Override)</h3>
+      <input type="hidden" id="rerouteCaseId">
+      <div class="form-ctrl" style="margin-bottom:14px;">
+        <label>สลับโอนไปยังแผนก:</label>
+        <select id="rerouteDeptSelect" class="search-inp">
+          <option value="ENG">แผนกช่าง (ENG)</option>
+          <option value="HK">แผนกแม่บ้าน (HK)</option>
+          <option value="IT">แผนกไอที (IT)</option>
+          <option value="FRONT">แผนกฟร้อนท์ (FRONT)</option>
+        </select>
+      </div>
+      <button class="btn-primary" style="width:100%;" onclick="confirmReroute()">ยืนยันสลับแผนกใน MySQL</button>
+    </div>
+  </div>
+
+  <!-- Modal: Room Detail & Incident History -->
+  <div class="modal-wrap" id="modalRoomDetail">
+    <div class="modal-box modal-box-lg">
+      <!-- Modal Header -->
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; border-bottom:1px solid var(--border-subtle); padding-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="width:42px; height:42px; border-radius:var(--r-md); background:#0F172A; color:#FFF; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.95rem;" id="modalRoomIcon">RM</div>
+          <div>
+            <h3 style="font-size:1.25rem; font-weight:700; line-height:1.2;" id="modalRoomTitle">ห้อง 102 (ชั้น 1)</h3>
+            <span style="font-size:0.8rem; color:var(--text-muted);" id="modalRoomSubtitle">Main Building • Deluxe Room</span>
+          </div>
+        </div>
+        <button class="btn-action" onclick="closeRoomModal()" style="font-size:1.15rem; padding:4px 10px; cursor:pointer;">✕</button>
+      </div>
+
+      <!-- Current Room Status Summary Box -->
+      <div style="background:#F8FAFC; border:1px solid var(--border-subtle); border-radius:var(--r-md); padding:14px 16px; margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:8px;">
+          <div style="font-size:0.85rem; font-weight:600; color:var(--text-muted);">สถานะปัจจุบันใน MySQL:</div>
+          <div id="modalRoomStatusBadge"><span class="tag tag-NEW">ปิดซ่อม (MAINTENANCE)</span></div>
+        </div>
+        <div style="font-size:0.92rem; color:var(--text-main); margin-bottom:4px;" id="modalRoomReason">
+          <strong>สาเหตุ / บันทึกล่าสุด:</strong> -
+        </div>
+        <div style="font-size:0.75rem; color:var(--text-muted);" id="modalRoomUpdated">
+          อัปเดตล่าสุด: วันนี้
+        </div>
+      </div>
+
+      <!-- Admin Status Override Controls -->
+      <div id="modalAdminControls" style="background:#FFF7ED; border:1px solid #FED7AA; border-radius:var(--r-md); padding:16px; margin-bottom:16px;">
+        <div style="font-size:0.92rem; font-weight:700; color:#9A3412; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+          กำหนดสถานะห้องพักใน MySQL (Admin Action Override)
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+          <label style="display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:var(--r-md); border:1px solid var(--border-subtle); background:#FFF; cursor:pointer; font-size:0.88rem; font-weight:600;">
+            <input type="radio" name="roomStatusRadio" value="AVAILABLE" id="radioAvail">
+            <span style="color:#10B981;">เปิดใช้งาน (AVAILABLE)</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:var(--r-md); border:1px solid var(--border-subtle); background:#FFF; cursor:pointer; font-size:0.88rem; font-weight:600;">
+            <input type="radio" name="roomStatusRadio" value="MAINTENANCE" id="radioMaint">
+            <span style="color:#EF4444;">ปิดซ่อม (MAINTENANCE)</span>
+          </label>
+        </div>
+        <div class="form-ctrl" style="margin-bottom:12px;">
+          <label style="font-size:0.82rem; font-weight:600; color:#7C2D12;">หมายเหตุการเปลี่ยนสถานะ (บันทึกลงฐานข้อมูล):</label>
+          <input type="text" id="modalStatusReasonInp" placeholder="เช่น แอร์ซ่อมเสร็จแล้วพร้อมเปิดขาย, สั่งปิดทาสีผนัง..." style="background:#FFF;">
+        </div>
+        <button class="btn-primary" style="width:100%; background:#C2410C;" onclick="saveRoomStatusChange()">บันทึกการเปลี่ยนแปลงสถานะห้องพักลง MySQL</button>
+      </div>
+
+      <!-- Owner Notice in Modal -->
+      <div id="modalOwnerNotice" style="display:none; background:#FEF3C7; border:1px solid #FCD34D; color:#92400E; padding:12px 14px; border-radius:var(--r-md); margin-bottom:16px; font-size:0.85rem; font-weight:600;">
+        <strong>โหมดผู้บริหาร (Owner):</strong> รายละเอียดและประวัติเหตุการณ์ของห้องพักแสดงผลแบบเรียลไทม์ (โหมดอ่านอย่างเดียว ปิดสิทธิ์การแก้ไขสถานะห้อง)
+      </div>
+
+      <!-- Incident & Maintenance History Timeline Section -->
+      <div>
+        <h4 style="font-size:1.02rem; font-weight:700; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+          เคสและงานซ่อมบำรุงที่เกี่ยวข้องกับห้องนี้
+        </h4>
+        <div id="modalIncidentTimeline" style="display:flex; flex-direction:column; gap:10px; max-height:260px; overflow-y:auto; padding-right:4px;">
+        </div>
+      </div>
+        <div id="modalIncidentTimeline" style="display:flex; flex-direction:column; gap:10px; max-height:260px; overflow-y:auto; padding-right:4px;">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modular Scripts Architecture -->
+  <script src="/admin/utils.js"></script>
+  <script src="/admin/auth.js"></script>
+  <script src="/admin/cases.js"></script>
+  <script src="/admin/daily.js"></script>
+  <script src="/admin/rooms.js"></script>
+  <script src="/admin/staff.js"></script>
+  <script src="/admin/users.js"></script>
+  <script src="/admin/app.js"></script>
+</body>
+</html>

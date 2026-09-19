@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>เข้าสู่ระบบ — Hotel Operations System (Hotel 3)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="login-shell">
+
+  <div class="login-card">
+    
+    <!-- Logo & Header -->
+    <div class="login-header">
+      <div class="login-logo">H</div>
+      <h1 class="login-title">Hotel </h1>
+      <p class="login-subtitle">ระบบบริหารจัดการเคสงานบริการและงานช่าง 4 แผนก</p>
+    </div>
+
+    <!-- Security & Route Guard Feedback Alert -->
+    <div id="alertBox" class="login-alert" style="display:none;"></div>
+
+    <!-- Login Form -->
+    <form class="login-form" id="loginForm" onsubmit="handleLogin(event)">
+      
+      <div class="login-field">
+        <label for="username">รหัสพนักงาน (ตัวเลข 6 หลัก):</label>
+        <input type="text" 
+               id="username" 
+               name="username" 
+               class="login-input" 
+               placeholder="เช่น 900001 หรือ 100101" 
+               inputmode="numeric"
+               pattern="[0-9]{6}"
+               maxlength="6"
+               oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+               required 
+               autofocus>
+      </div>
+
+      <div class="login-field">
+        <label for="password">รหัสผ่าน PIN (ตัวเลข 6 หลัก):</label>
+        <input type="password" 
+               id="password" 
+               name="password" 
+               class="login-input" 
+               placeholder="ระบุ PIN 6 หลัก (เช่น 123456)" 
+               inputmode="numeric"
+               pattern="[0-9]{6}"
+               maxlength="6"
+               oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+               required>
+      </div>
+
+      <button type="submit" class="login-submit-btn" id="submitBtn">
+        เข้าสู่ระบบด้วยรหัสตัวเลข (Log in)
+      </button>
+
+    </form>
+
+    <!-- Quick Accounts Guide (MySQL Numbers-Only Data) -->
+    <div class="demo-accounts-box">
+      <div class="demo-accounts-title">
+        <span>รหัสพนักงานในระบบ MySQL (ตัวเลข 6 หลัก)</span>
+        <span style="font-size:0.7rem; color:#F97316; font-weight:700;">PIN: 123456</span>
+      </div>
+      <div class="demo-chips">
+        <span class="demo-chip" onclick="fillAcc('900001', '123456')">900001 (คุณเอก Admin)</span>
+        <span class="demo-chip" onclick="fillAcc('900002', '123456')">900002 (คุณประธาน Owner)</span>
+        <span class="demo-chip" onclick="fillAcc('999999', '123456')">999999 (ผู้บริหาร GM)</span>
+        <span class="demo-chip" onclick="fillAcc('100101', '123456')">100101 (ฟร้อนท์)</span>
+        <span class="demo-chip" onclick="fillAcc('200101', '123456')">200101 (ช่าง)</span>
+        <span class="demo-chip" onclick="fillAcc('300101', '123456')">300101 (แม่บ้าน)</span>
+        <span class="demo-chip" onclick="fillAcc('400101', '123456')">400101 (ไอที)</span>
+      </div>
+    </div>
+
+    <!-- Security Info Note -->
+    <div style="font-size:0.75rem; color:#64748B; text-align:center; line-height:1.4;">
+      ระบบรักษาความปลอดภัยแบบ Single Entry Point ตรวจสอบสิทธิ์และแยกเส้นทางอัตโนมัติ
+    </div>
+
+  </div>
+
+  <script>
+    // Check URL parameters for Route Guard notifications
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const error = urlParams.get('error');
+      const from = urlParams.get('from');
+      const alertBox = document.getElementById('alertBox');
+
+      if (error === 'admin_forbidden') {
+        showAlert('<strong>ปฏิเสธการเข้าถึง:</strong> คุณไม่มีสิทธิ์เข้าใช้งานหน้า Admin ค่ะ (สงวนสิทธิ์เฉพาะ Admin และ Owner เท่านั้น)', 'danger');
+      } else if (error === 'login_required') {
+        if (from === 'admin') {
+          showAlert('<strong>ต้องเข้าสู่ระบบก่อน:</strong> ไม่สามารถพิมพ์ /admin หรือ /admin.html เข้าโดยตรงได้ค่ะ กรุณาลงชื่อเข้าใช้งานก่อนนะคะ', 'warning');
+        } else {
+          showAlert('<strong>กรุณาเข้าสู่ระบบ:</strong> กรุณากรอกรหัสพนักงานและ PIN เพื่อเข้าใช้งานค่ะ', 'warning');
+        }
+      }
+
+      // Check if already authenticated
+      fetch('/api/me')
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.authenticated && data.user) {
+            const dest = (data.user.role === 'ADMIN' || data.user.role === 'OWNER') ? '/admin.html' : '/user.html';
+            showAlert(`คุณกำลังอยู่ในระบบ: <strong>${data.user.name} (#${data.user.code})</strong> • <a href="${dest}" style="color:#6EE7B7; text-decoration:underline; font-weight:700;">ไปยังระบบต่อ</a> • <button type="button" onclick="quickLogout()" style="background:none; border:none; color:#F87171; text-decoration:underline; cursor:pointer; font-size:0.82rem; font-family:inherit; padding:0 4px;">[ออกจากระบบเพื่อสลับบัญชี]</button>`, 'success');
+          }
+        })
+        .catch(() => {});
+    });
+
+    function showAlert(html, type = 'danger') {
+      const box = document.getElementById('alertBox');
+      box.className = `login-alert ${type}`;
+      box.innerHTML = html;
+      box.style.display = 'flex';
+    }
+
+    function fillAcc(u, p) {
+      document.getElementById('username').value = u;
+      document.getElementById('password').value = p || '123456';
+      document.getElementById('password').focus();
+    }
+
+    async function quickLogout() {
+      await fetch('/api/logout', { method: 'POST' });
+      document.getElementById('alertBox').style.display = 'none';
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const submitBtn = document.getElementById('submitBtn');
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = 'กำลังตรวจสอบสิทธิ์...';
+
+      if (!/^\d{6}$/.test(username)) {
+        showAlert('รหัสพนักงานต้องเป็นตัวเลข 6 หลักเท่านั้นค่ะ (เช่น 900001 หรือ 100101)', 'danger');
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'เข้าสู่ระบบด้วยรหัสตัวเลข (Log in)';
+        return;
+      }
+      if (!/^\d{6}$/.test(password)) {
+        showAlert('รหัสผ่าน PIN ต้องเป็นตัวเลข 6 หลักเท่านั้นค่ะ (เช่น 123456)', 'danger');
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'เข้าสู่ระบบด้วยรหัสตัวเลข (Log in)';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          showAlert(result.message || 'รหัสพนักงานหรือรหัสผ่าน PIN ไม่ถูกต้องค่ะ', 'danger');
+          submitBtn.disabled = false;
+          submitBtn.innerText = 'เข้าสู่ระบบด้วยรหัสตัวเลข (Log in)';
+          return;
+        }
+
+        // Save local session state for seamless browser experience
+        localStorage.setItem('hotel_ops_current_user', JSON.stringify(result.user));
+
+        showAlert('เข้าสู่ระบบสำเร็จ กำลังพาไปยังหน้าจอของคุณ...', 'success');
+
+        // Redirect according to server decision
+        setTimeout(() => {
+          window.location.href = result.redirectUrl;
+        }, 300);
+
+      } catch (err) {
+        showAlert('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ค่ะ กรุณาลองใหม่อีกครั้ง', 'danger');
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'เข้าสู่ระบบ (Log in)';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+/**
+ * Hotel Operations System - Badges, Tags & Status Indicators
+ */
+
+/* Gateway Banner Badge (index.html) */
+.badge {
+  display: inline-block;
+  background: rgba(234, 88, 12, 0.15);
+  color: var(--brand-orange-light);
+  border: 1px solid rgba(234, 88, 12, 0.3);
+  padding: 4px 14px;
+  border-radius: var(--r-pill);
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  font-family: var(--font-en);
+}
+
+/* Numeric Counter Badges */
+.badge-num {
+  background: #EF4444;
+  color: #FFFFFF;
+  font-size: 0.68rem;
+  padding: 1px 6px;
+  border-radius: var(--r-pill);
+  font-weight: 700;
+  font-family: var(--font-en);
+}
+
+/* Field Staff Status Tags */
+.st-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--r-pill);
+}
+
+.st-NEW { background: var(--status-new-bg); color: var(--status-new); }
+.st-IN_PROGRESS { background: var(--status-prog-bg); color: var(--status-prog); }
+.st-WAITING_PARTS { background: var(--status-wait-bg); color: var(--status-wait); }
+.st-CLOSED { background: var(--status-closed-bg); color: var(--status-closed); }
+
+/* Administrative Table Status Tags */
+.tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--r-pill);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.tag-NEW { background: var(--status-new-bg); color: var(--status-new); }
+.tag-IN_PROGRESS { background: var(--status-prog-bg); color: var(--status-prog); }
+.tag-WAITING_PARTS { background: var(--status-wait-bg); color: var(--status-wait); }
+.tag-CLOSED { background: var(--status-closed-bg); color: var(--status-closed); }
+
+/* User Identity & Avatar Pills */
+.user-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-body);
+  border: 1px solid var(--border-subtle);
+  padding: 5px 12px;
+  border-radius: var(--r-pill);
+}
+
+.user-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.user-name-txt {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.user-code-txt {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-family: var(--font-en);
+}
+
+/* Admin Top Bar User Tag */
+.current-user-tag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-body);
+  border: 1px solid var(--border-subtle);
+  padding: 6px 14px;
+  border-radius: var(--r-pill);
+}
+
+.user-badge-ico {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #7C3AED;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.user-meta-txt {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.role-indicator-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  text-transform: uppercase;
+  font-family: var(--font-en);
+}
+
+.role-ADMIN { background: #F5F3FF; color: #7C3AED; }
+.role-OWNER { background: #FEF3C7; color: #B45309; }
+.role-DEPT_HEAD { background: #E0F2FE; color: #0369A1; }
+.role-STAFF { background: #ECFDF5; color: #047857; }
+
+.status-active { background: #DEF7EC; color: #03543F; font-size: 0.72rem; padding: 2px 8px; border-radius: var(--r-pill); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+.status-inactive { background: #FDE8E8; color: #9B1C1C; font-size: 0.72rem; padding: 2px 8px; border-radius: var(--r-pill); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+
+/* Brand Icon Badges */
+.brand-logo,
+.brand-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-md);
+  background: linear-gradient(135deg, #0F172A, #334155);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.15rem;
+  font-family: var(--font-en);
+}

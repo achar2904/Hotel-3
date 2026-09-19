@@ -1,0 +1,233 @@
+/**
+ * Hotel Operations - Field Staff Portal Stylesheet
+ * Directory: /user/user.css
+ */
+
+/* View Tab Bar */
+.view-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 12px 16px;
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle, #E2E8F0);
+  border-radius: var(--r-md, 10px);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted, #64748B);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+}
+
+.tab-btn:hover {
+  background: #F8FAFC;
+  color: var(--text-main, #0F172A);
+}
+
+.tab-btn.active {
+  background: #0F172A;
+  border-color: #0F172A;
+  color: #FFFFFF;
+}
+
+.tab-btn .badge-num {
+  background: #EF4444;
+  color: #FFFFFF;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+/* Department Selection Cards */
+.dept-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+@media (min-width: 640px) {
+  .dept-cards {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.dept-card-btn {
+  padding: 12px 8px;
+  background: #F8FAFC;
+  border: 1px solid var(--border-subtle, #E2E8F0);
+  border-radius: var(--r-md, 10px);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.dept-card-btn:hover {
+  background: #F1F5F9;
+  border-color: #CBD5E1;
+}
+
+.dept-card-btn.active {
+  background: #EFF6FF;
+  border-color: #3B82F6;
+  color: #1D4ED8;
+  font-weight: 700;
+}
+
+.dept-card-btn .lbl {
+  font-size: 0.9rem;
+}
+
+/* Room Pills Matrix */
+.room-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.room-btn {
+  padding: 6px 12px;
+  background: #F1F5F9;
+  border-radius: var(--r-sm, 6px);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+
+.room-btn:hover {
+  background: #E2E8F0;
+}
+
+.room-btn.active {
+  background: #0F172A;
+  color: #FFFFFF;
+}
+
+/* Quick Issue Chips */
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.issue-chip {
+  padding: 6px 12px;
+  background: #F8FAFC;
+  border: 1px solid var(--border-subtle, #E2E8F0);
+  border-radius: 999px;
+  font-size: 0.82rem;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+
+.issue-chip:hover {
+  background: #F1F5F9;
+  border-color: #94A3B8;
+}
+
+.issue-chip.active {
+  background: #0F172A;
+  border-color: #0F172A;
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+/* Case Queue Cards */
+.case-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle, #E2E8F0);
+  border-radius: var(--r-md, 10px);
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.case-card:hover {
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.05));
+}
+
+.case-card.highlight {
+  border-left: 4px solid #3B82F6;
+}
+
+.case-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.case-id-txt {
+  font-family: var(--font-en, 'Plus Jakarta Sans'), sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text-muted, #64748B);
+}
+
+.case-subj-txt {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main, #0F172A);
+  margin-bottom: 4px;
+}
+
+/* Assignee Information Box */
+.assignee-box {
+  background: #F8FAFC;
+  border: 1px solid var(--border-subtle, #E2E8F0);
+  border-radius: var(--r-sm, 6px);
+  padding: 10px 12px;
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.assignee-name {
+  font-size: 0.85rem;
+  color: var(--text-main, #0F172A);
+}
+
+.assignee-call {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #2563EB;
+  text-decoration: none;
+  background: #EFF6FF;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #DBEAFE;
+}
+
+.assignee-call:hover {
+  background: #DBEAFE;
+}
+
+.case-act-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle, #E2E8F0);
+}

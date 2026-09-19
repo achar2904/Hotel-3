@@ -1,0 +1,25 @@
+/**
+ * Hotel Operations System - Master Stylesheet
+ * 
+ * Built strictly according to modular-css-architect guidelines:
+ * 1. Base Tokens & Variables
+ * 2. Base Typography & Resets
+ * 3. Page Layouts & Shells
+ * 4. Component Modules (Buttons, Cards, Forms, Badges, Modals, Room Matrix, Login)
+ */
+
+/* 1. Base & Design Tokens */
+@import url('./base/variables.css');
+@import url('./base/typography.css');
+
+/* 2. Layout & Shell Structure */
+@import url('./layout/layout.css');
+
+/* 3. Reusable UI Components */
+@import url('./components/button.css');
+@import url('./components/card.css');
+@import url('./components/text-field.css');
+@import url('./components/badge.css');
+@import url('./components/modal.css');
+@import url('./components/room-matrix.css');
+@import url('./components/login.css');

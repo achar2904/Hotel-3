@@ -1,0 +1,128 @@
+/**
+ * Hotel Operations System - Modals, Overlays & Camera Mockup
+ */
+
+/* Modal Overlays */
+.modal-overlay,
+.modal-wrap {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal-overlay.show,
+.modal-wrap.show {
+  display: flex;
+}
+
+/* Modal Content Containers */
+.modal-content,
+.modal-box {
+  background: #FFFFFF;
+  border-radius: var(--r-lg);
+  width: 100%;
+  max-width: 460px;
+  padding: 22px;
+  box-shadow: var(--shadow-modal);
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-box-lg {
+  max-width: 720px;
+}
+
+/* Small Red Close Button (Top-Right of Modal Frame) */
+.modal-close-btn-red {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-sm, 6px);
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #DC2626;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  transition: all 0.15s ease;
+  z-index: 10;
+}
+
+.modal-close-btn-red:hover {
+  background: #DC2626;
+  border-color: #B91C1C;
+  color: #FFFFFF;
+}
+
+.modal-close-btn-red:active {
+  transform: scale(0.95);
+}
+
+/* Owner Read-Only Notification Banner */
+.owner-banner {
+  display: none;
+  background: #FFFBEB;
+  border: 1px solid #FCD34D;
+  color: #92400E;
+  padding: 10px 16px;
+  border-radius: var(--r-md);
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Photo Upload & Camera Mockup (Field Staff) */
+.cam-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  border: 2px dashed #CBD5E1;
+  border-radius: var(--r-md);
+  background: #F8FAFC;
+  color: #475569;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.cam-box:hover {
+  background: #F1F5F9;
+  border-color: #94A3B8;
+}
+
+.cam-preview {
+  display: none;
+  margin-top: 8px;
+  position: relative;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  max-height: 140px;
+}
+
+.cam-preview img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  display: block;
+}

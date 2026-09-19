@@ -1,0 +1,354 @@
+/**
+ * Hotel Operations System - Button Components
+ */
+
+/* Role Switcher Button */
+.role-btn {
+  padding: 4px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  color: #CBD5E1;
+  font-size: 0.74rem;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--font-th);
+  transition: all 0.15s ease;
+}
+
+.role-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+}
+
+.role-btn.active {
+  background: #FFFFFF;
+  color: var(--bg-dark);
+  font-weight: 700;
+  border-color: #FFFFFF;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Tab Navigation Buttons */
+.tab-btn {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.12s ease;
+  font-family: var(--font-th);
+}
+
+.tab-btn:hover {
+  color: var(--text-main);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.tab-btn.active {
+  background: #FFFFFF;
+  color: var(--text-main);
+  box-shadow: var(--shadow-sm);
+}
+
+.nav-tab-item {
+  padding: 10px 18px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: all 0.12s ease;
+  font-family: var(--font-th);
+}
+
+.nav-tab-item:hover {
+  background: #F1F5F9;
+  color: var(--text-main);
+}
+
+.nav-tab-item.active {
+  background: #FFFFFF;
+  color: var(--text-main);
+  box-shadow: var(--shadow-sm);
+}
+
+.nav-tab-item.locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Primary Action Buttons */
+.btn-primary {
+  min-height: 44px;
+  padding: 8px 20px;
+  background: var(--bg-dark);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--r-md);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.15s ease;
+  font-family: var(--font-th);
+}
+
+.btn-primary:hover {
+  background: #1E293B;
+}
+
+.btn-send {
+  width: 100%;
+  min-height: 48px;
+  background: #10B981;
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--r-md);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+  transition: transform 0.1s ease, background 0.15s ease;
+  font-family: var(--font-th);
+}
+
+.btn-send:hover {
+  background: #059669;
+}
+
+.btn-send:active {
+  transform: scale(0.98);
+}
+
+/* Table & Compact Action Buttons */
+.btn-action {
+  min-height: 34px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-subtle);
+  background: #FFFFFF;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.12s ease;
+  font-family: var(--font-th);
+}
+
+.btn-action:hover {
+  background: #F1F5F9;
+}
+
+.btn-action.btn-danger {
+  color: #EF4444;
+  border-color: #FECACA;
+  background: #FEF2F2;
+}
+
+.btn-action.btn-danger:hover {
+  background: #FEE2E2;
+}
+
+/* Field Staff Case Action Buttons */
+.act-btn {
+  min-height: 40px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-subtle);
+  background: #FFFFFF;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.12s ease;
+  font-family: var(--font-th);
+}
+
+.act-btn:hover {
+  filter: brightness(0.95);
+}
+
+.act-btn.btn-accept {
+  background: var(--bg-dark);
+  color: #FFFFFF;
+  border-color: var(--bg-dark);
+}
+
+.act-btn.btn-done {
+  background: #10B981;
+  color: #FFFFFF;
+  border-color: #10B981;
+}
+
+.act-btn.btn-wait {
+  background: #FFFBEB;
+  color: #92400E;
+  border-color: #FCD34D;
+}
+
+/* Senior Friendly Big Department Buttons */
+.dept-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.dept-card-btn {
+  padding: 12px 10px;
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  background: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.12s ease;
+  min-height: 76px;
+  justify-content: center;
+  user-select: none;
+}
+
+.dept-card-btn .ico {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.dept-card-btn .lbl {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.dept-card-btn:hover {
+  border-color: var(--border-focus);
+}
+
+.dept-card-btn.active[data-dept="ENG"] {
+  border-color: var(--dept-eng);
+  background: var(--dept-eng-bg);
+  color: var(--dept-eng);
+}
+
+.dept-card-btn.active[data-dept="HK"] {
+  border-color: var(--dept-hk);
+  background: var(--dept-hk-bg);
+  color: var(--dept-hk);
+}
+
+.dept-card-btn.active[data-dept="IT"] {
+  border-color: var(--dept-it);
+  background: var(--dept-it-bg);
+  color: var(--dept-it);
+}
+
+.dept-card-btn.active[data-dept="FRONT"] {
+  border-color: var(--dept-front);
+  background: var(--dept-front-bg);
+  color: var(--dept-front);
+}
+
+/* Quick Room Selector Button */
+.room-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--border-subtle);
+  background: #FFFFFF;
+  border-radius: var(--r-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  min-width: 54px;
+  text-align: center;
+  font-family: var(--font-en);
+  transition: all 0.12s ease;
+}
+
+.room-btn:hover {
+  border-color: var(--accent);
+}
+
+.room-btn.active {
+  background: var(--accent);
+  color: #FFFFFF;
+  border-color: var(--accent);
+}
+
+/* Filter Pill Buttons */
+.filter-pill {
+  min-height: 38px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  background: #FFFFFF;
+  cursor: pointer;
+  color: #334155;
+  transition: all 0.12s ease;
+  font-family: var(--font-th);
+}
+
+.filter-pill:hover {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+}
+
+.filter-pill.active {
+  background: var(--bg-dark);
+  color: #FFFFFF;
+  border-color: var(--bg-dark);
+}
+
+/* Portal Link CTA Button (index.html) */
+.card-btn {
+  margin-top: auto;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--brand-orange-light);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Delete Photo Pill Button */
+.btn-del-pic {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(15, 23, 42, 0.8);
+  color: #FFFFFF;
+  border: none;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-family: var(--font-th);
+}

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Hotel Ops — ระบบรับ-ส่งงานพนักงาน (User & Field Staff) - Hotel 3</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/user/user.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="brand-wrap">
+      <div class="brand-logo">H</div>
+      <div class="brand-details">
+        <div class="brand-name">Hotel Operations</div>
+      </div>
+    </div>
+    <div class="header-dropdown-wrap" id="userDropdownWrap">
+      <button type="button" class="header-dropdown-btn" id="userDropdownBtn" onclick="toggleUserDropdown(event)" aria-label="เมนูผู้ใช้งาน" aria-expanded="false">
+        <div class="user-avatar" id="avatarTxt">...</div>
+        <div class="user-meta header-user-meta">
+          <span class="user-name-txt" id="userNameTxt">กำลังโหลด...</span>
+          <span class="user-code-txt" id="userDeptTxt">กำลังเชื่อมต่อฐานข้อมูล</span>
+        </div>
+        <span class="dropdown-chevron">▾</span>
+      </button>
+
+      <div class="header-dropdown-menu" id="userDropdownMenu">
+        <div class="dropdown-user-header">
+          <div class="dropdown-user-name" id="dropdownUserName">กำลังโหลด...</div>
+          <div class="dropdown-user-dept" id="dropdownUserDept">กำลังเชื่อมต่อฐานข้อมูล</div>
+        </div>
+        <div class="dropdown-divider"></div>
+        <button type="button" class="dropdown-item logout-item" onclick="doLogout()">
+          <span>ออกจากระบบ</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-wrap">
+    
+    <!-- Tab Navigation -->
+    <div class="view-tabs">
+      <button class="tab-btn active" id="tabCreate" onclick="switchView('create')">
+        แจ้งเคสใหม่
+      </button>
+      <button class="tab-btn" id="tabQueue" onclick="switchView('queue')">
+        คิวงานของแผนกฉัน <span class="badge-num" id="queueBadge">0</span>
+      </button>
+    </div>
+
+    <!-- VIEW 1: CREATE CASE -->
+    <section id="viewCreate" class="card">
+      <div class="card-head">
+        <h2 class="card-title">แจ้งส่งต่องานระหว่างแผนก</h2>
+        <span style="font-size:0.8rem; color:var(--text-muted);" id="reporterInfo">ผู้แจ้ง: กำลังโหลด...</span>
+      </div>
+
+      <!-- 1. Target Department Selection -->
+      <div class="form-row">
+        <label class="form-lbl">1. ส่งต่อให้แผนกไหนรับผิดชอบ? <span class="form-hint">(แตะปุ่มเลือก)</span></label>
+        <div class="dept-cards">
+          <div class="dept-card-btn active" data-dept="ENG" onclick="pickDept('ENG')">
+            <span class="lbl">แผนกช่าง (ENG)</span>
+          </div>
+          <div class="dept-card-btn" data-dept="HK" onclick="pickDept('HK')">
+            <span class="lbl">แม่บ้าน (HK)</span>
+          </div>
+          <div class="dept-card-btn" data-dept="IT" onclick="pickDept('IT')">
+            <span class="lbl">ไอที (IT)</span>
+          </div>
+          <div class="dept-card-btn" data-dept="FRONT" onclick="pickDept('FRONT')">
+            <span class="lbl">ฟร้อนท์ (FRONT)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Room / Location -->
+      <div class="form-row">
+        <label class="form-lbl">2. เลขห้องพัก (ระบบ 422 ห้อง) หรือจุดเกิดเหตุ</label>
+        <div class="room-pills">
+          <span class="room-btn active" onclick="pickRoom('102')">102</span>
+          <span class="room-btn" onclick="pickRoom('205')">205</span>
+          <span class="room-btn" onclick="pickRoom('308')">308</span>
+          <span class="room-btn" onclick="pickRoom('412')">412</span>
+          <span class="room-btn" onclick="pickRoom('Lobby')">Lobby</span>
+          <span class="room-btn" onclick="pickRoom('ห้องอาหาร')">ห้องอาหาร</span>
+        </div>
+        <input type="text" class="inp-box" id="inpLoc" value="ห้อง 102" placeholder="หรือพิมพ์เลขห้องอื่น เช่น ห้อง 314">
+      </div>
+
+      <!-- 3. Quick Issue Chips -->
+      <div class="form-row">
+        <label class="form-lbl">3. ปัญหาที่พบ <span class="form-hint">(แตะปุ่มลัด ไม่ต้องพิมพ์)</span></label>
+        <div class="chip-list" id="chipBox"></div>
+        <input type="text" class="inp-box" id="inpSubject" placeholder="หรือพิมพ์ระบุเพิ่มเติม...">
+      </div>
+
+      <!-- 4. Photo Camera Mockup -->
+      <div class="form-row">
+        <label class="form-lbl">4. ถ่ายรูปหน้างาน <span class="form-hint">(ช่างเห็นภาพ เข้าใจทันที)</span></label>
+        <div class="cam-box" onclick="mockCamera()">
+          <span>แตะเพื่อถ่ายรูปจากกล้องหรือแนบภาพ</span>
+        </div>
+        <div class="cam-preview" id="camPrev">
+          <img src="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80" alt="Camera Preview">
+          <button type="button" class="btn-del-pic" onclick="delPhoto()">ลบรูป</button>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button type="button" class="btn-send" id="btnSubmit" onclick="doSubmit()">
+        ส่งแจ้งเคสเข้า MySQL ทันที
+      </button>
+    </section>
+
+    <!-- VIEW 2: DEPARTMENT QUEUE -->
+    <section id="viewQueue" class="card" style="display:none;">
+      <div class="card-head">
+        <div>
+          <h2 class="card-title" id="queueTitle">คิวงานของแผนกฉัน</h2>
+          <span style="font-size:0.78rem; color:var(--text-muted);" id="queueSub">ดึงข้อมูลสดจากฐานข้อมูล MySQL</span>
+        </div>
+        <button class="act-btn" onclick="renderMyQueue()">รีเฟรช</button>
+      </div>
+
+      <div id="queueContainer"></div>
+    </section>
+
+  </main>
+
+  <!-- Modal 1: Case Creation Success -->
+  <div class="modal-overlay" id="popSuccess">
+    <div class="modal-content" style="text-align:center;">
+      <div style="font-size:2rem; font-weight:700; color:#10B981; margin-bottom:8px;">✓</div>
+      <h3 style="font-size:1.2rem; font-weight:700; margin-bottom:6px;">บันทึกลงฐานข้อมูล MySQL เรียบร้อยแล้วค่ะ</h3>
+      <p style="color:var(--text-muted); font-size:0.88rem; margin-bottom:14px;">
+        เคสถูกส่งตรงเข้าคิวงานของแผนกปลายทางในระบบเรียบร้อยแล้ว
+      </p>
+      <div style="background:#F8FAFC; border:1px dashed var(--border-subtle); padding:10px; border-radius:8px; margin-bottom:16px;">
+        <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase;">หมายเลขเคส</div>
+        <div style="font-size:1.15rem; font-weight:700; color:var(--accent); font-family:var(--font-en);" id="popCaseId">CASE-001</div>
+        <div style="font-size:0.85rem; color:#334155; margin-top:2px;" id="popSummary">ห้อง 102 ➔ ช่าง</div>
+      </div>
+      <button class="btn-send" onclick="closeSuccess()">ตกลง</button>
+    </div>
+  </div>
+
+  <!-- Modal 2: Close Case / Finish Task -->
+  <div class="modal-overlay" id="popDone">
+    <div class="modal-content">
+      <button type="button" class="modal-close-btn-red" onclick="closeDoneModal()" aria-label="ปิดหน้าต่าง" title="ปิดหน้าต่าง">✕</button>
+      <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:8px; padding-right:32px;">ปิดงานและเสร็จสิ้นภารกิจ (บันทึกลง MySQL)</h3>
+      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:12px;">
+        งานจะถูกบันทึกสถานะเป็น <strong>CLOSED (ปิดงาน)</strong> ใน MySQL พร้อมอัปเดตห้องพักเป็นพร้อมใช้งานอัตโนมัติ
+      </p>
+      <input type="hidden" id="doneCaseId">
+      <div class="form-row">
+        <label class="form-lbl">บันทึกการซ่อม/การทำงาน (สั้น ๆ):</label>
+        <input type="text" class="inp-box" id="doneNote" value="ดำเนินการซ่อมเสร็จสิ้น ทดสอบใช้งานได้เรียบร้อย">
+      </div>
+      <button class="btn-send" onclick="confirmDone()">ปิดงานเสร็จสิ้น (จบขั้นตอน)</button>
+    </div>
+  </div>
+
+  <!-- Modal 3: Cross-Department Transfer -->
+  <div class="modal-overlay" id="popTransfer">
+    <div class="modal-content">
+      <button type="button" class="modal-close-btn-red" onclick="closeTransModal()" aria-label="ปิดหน้าต่าง" title="ปิดหน้าต่าง">✕</button>
+      <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:12px; padding-right:32px;">โอนย้ายเคสข้ามแผนก</h3>
+      <input type="hidden" id="transCaseId">
+      <div class="form-row">
+        <label class="form-lbl">โอนต่อไปยังแผนก:</label>
+        <select class="inp-box" id="transDept">
+          <option value="IT">ไอที (IT)</option>
+          <option value="ENG">ช่าง (Engineering)</option>
+          <option value="HK">แม่บ้าน (Housekeeping)</option>
+          <option value="FRONT">ฟร้อนท์ (Front Office)</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">เหตุผลการโอนย้าย (จำเป็น):</label>
+        <input type="text" class="inp-box" id="transReason" placeholder="เช่น เป็นปัญหาสายแลน ไม่ใช่ปัญหาไฟฟ้า">
+      </div>
+      <button class="btn-send" onclick="confirmTransfer()">ยืนยันโอนย้ายใน MySQL</button>
+    </div>
+  </div>
+
+  <!-- Modular Scripts Architecture -->
+  <script src="/user/utils.js"></script>
+  <script src="/user/auth.js"></script>
+  <script src="/user/create-case.js"></script>
+  <script src="/user/queue.js"></script>
+  <script src="/user/transfer.js"></script>
+  <script src="/user/app.js"></script>
+</body>
+</html>

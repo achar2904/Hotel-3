@@ -1,0 +1,368 @@
+/**
+ * Hotel Operations System - Web Layout & Structural Shells
+ */
+
+/* Simulation Ribbon Header (Top Persistent) */
+.sim-bar {
+  background: var(--bg-dark);
+  color: #E2E8F0;
+  padding: 8px 16px;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.sim-role-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+/* User / Staff Mobile Header */
+.app-header {
+  background: #334155;
+  border-bottom: 1px solid #1E293B;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  color: #FFFFFF;
+}
+
+.brand-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.brand-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.brand-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  color: #FFFFFF;
+}
+
+.brand-sub {
+  font-size: 0.72rem;
+  color: #94A3B8;
+  font-family: var(--font-en);
+  white-space: nowrap;
+}
+
+.app-header .brand-logo,
+.admin-header .brand-logo,
+.admin-header .brand-badge {
+  background: #0F172A;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Admin & Executive Top Navigation Header */
+.admin-header {
+  background: #334155;
+  border-bottom: 1px solid #1E293B;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  color: #FFFFFF;
+}
+
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.brand-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  color: #FFFFFF;
+}
+
+/* Header User Dropdown Architecture */
+.header-dropdown-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.header-dropdown-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 5px 12px;
+  border-radius: var(--r-pill, 9999px);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  font-family: inherit;
+  color: #FFFFFF;
+  user-select: none;
+}
+
+.header-dropdown-btn:hover {
+  background: #0F172A;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.header-dropdown-btn:focus-visible {
+  outline: 2px solid var(--accent, #2563EB);
+  outline-offset: 2px;
+}
+
+.header-user-meta {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.header-dropdown-btn .user-name-txt,
+.header-dropdown-btn .user-meta-txt {
+  color: #FFFFFF;
+}
+
+.header-dropdown-btn .user-code-txt {
+  color: #94A3B8;
+}
+
+.header-dropdown-btn .dropdown-chevron {
+  font-size: 0.75rem;
+  color: #94A3B8;
+  transition: transform 0.2s ease;
+  margin-left: 2px;
+}
+
+.header-dropdown-wrap.is-open .dropdown-chevron {
+  transform: rotate(180deg);
+}
+
+.header-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle, #E2E8F0);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+  padding: 8px;
+  z-index: 1000;
+  display: none;
+  animation: dropdownFadeIn 0.15s ease-out forwards;
+}
+
+.header-dropdown-wrap.is-open .header-dropdown-menu {
+  display: block;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-user-header {
+  padding: 8px 10px 10px 10px;
+}
+
+.dropdown-user-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-main, #0F172A);
+  line-height: 1.3;
+}
+
+.dropdown-user-dept {
+  font-size: 0.75rem;
+  color: var(--text-muted, #64748B);
+  margin-top: 2px;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border-subtle, #E2E8F0);
+  margin: 4px 0 6px 0;
+}
+
+.dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-main, #0F172A);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease, color 0.15s ease;
+  font-family: inherit;
+}
+
+.dropdown-item:hover {
+  background: #F1F5F9;
+}
+
+.dropdown-item.logout-item {
+  color: #DC2626;
+}
+
+.dropdown-item.logout-item:hover {
+  background: #FEE2E2;
+}
+
+.dropdown-item-ico {
+  font-size: 1rem;
+}
+
+/* User & Admin Containers */
+.main-wrap {
+  max-width: 680px;
+  margin: 16px auto;
+  padding: 0 14px 60px 14px;
+}
+
+.admin-container {
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 0 20px 40px 20px;
+}
+
+/* Gateway Hub Shell (index.html) */
+body.gateway-body {
+  background: var(--bg-dark);
+  color: var(--text-light);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.gateway-box {
+  width: 100%;
+  max-width: 660px;
+  text-align: center;
+}
+
+.gateway-box h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin-bottom: 8px;
+}
+
+.gateway-box p {
+  color: var(--text-sub);
+  font-size: 0.95rem;
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
+.portal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.footer-note {
+  font-size: 0.8rem;
+  color: #64748B;
+  line-height: 1.5;
+}
+
+/* View & Navigation Tabs */
+.view-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 8px;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 8px;
+  overflow-x: auto;
+}
+
+/* Filter Bar Shell */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  /* Brand-wrap details collapse into logo only */
+  .brand-wrap .brand-details,
+  .brand-wrap > div:not(.brand-logo),
+  .brand-group .brand-details,
+  .brand-group > div:not(.brand-badge) {
+    display: none !important;
+  }
+
+  .brand-wrap,
+  .brand-group {
+    gap: 0;
+  }
+
+  .header-user-meta .user-code-txt,
+  .header-user-meta .role-indicator-badge {
+    display: none !important;
+  }
+
+  .header-dropdown-btn {
+    padding: 5px 10px;
+    gap: 6px;
+  }
+
+  .app-header {
+    padding: 10px 14px;
+  }
+
+  .admin-header {
+    padding: 10px 14px;
+  }
+
+  .admin-container {
+    padding: 0 12px 30px 12px;
+  }
+}

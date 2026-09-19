@@ -1,0 +1,22 @@
+{
+  "name": "hotel-3",
+  "version": "1.0.0",
+  "description": "Hotel Operations & Incident Management System (Hotel 3)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node seed-all.js"
+  },
+  "keywords": [
+    "hotel",
+    "operations",
+    "incident-management",
+    "mysql",
+    "vanilla-js"
+  ],
+  "author": "Khun Ek",
+  "license": "ISC",
+  "dependencies": {
+    "mysql2": "^3.11.0"
+  }
+}

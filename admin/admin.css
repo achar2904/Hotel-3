@@ -1,0 +1,127 @@
+/**
+ * Hotel Operations - Executive & Admin Control Portal Stylesheet
+ * Directory: /admin/admin.css
+ */
+
+/* Admin Navigation Tabs */
+.nav-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.nav-tab-item {
+  padding: 10px 18px;
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle, #E2E8F0);
+  border-radius: var(--r-md, 10px);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted, #64748B);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nav-tab-item:hover {
+  background: #F8FAFC;
+  color: var(--text-main, #0F172A);
+}
+
+.nav-tab-item.active {
+  background: #0F172A;
+  border-color: #0F172A;
+  color: #FFFFFF;
+}
+
+/* KPI Summary Cards Row */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+@media (min-width: 768px) {
+  .kpi-row {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+.kpi-box {
+  background: #F8FAFC;
+  border: 1px solid var(--border-subtle, #E2E8F0);
+  border-radius: var(--r-md, 10px);
+  padding: 14px 16px;
+}
+
+.kpi-lbl {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted, #64748B);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.kpi-num {
+  font-family: var(--font-en, 'Plus Jakarta Sans'), sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-main, #0F172A);
+  line-height: 1.1;
+}
+
+/* Daily Departmental KPI Grid */
+.dept-daily-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .dept-daily-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .dept-daily-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.dept-kpi-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle, #E2E8F0);
+  border-radius: var(--r-md, 10px);
+  padding: 18px;
+}
+
+.dept-kpi-card.border-front { border-top: 4px solid var(--dept-front, #8B5CF6); }
+.dept-kpi-card.border-hk    { border-top: 4px solid var(--dept-hk, #059669); }
+.dept-kpi-card.border-eng   { border-top: 4px solid var(--dept-eng, #D97706); }
+.dept-kpi-card.border-it    { border-top: 4px solid var(--dept-it, #2563EB); }
+
+.dept-kpi-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-subtle, #E2E8F0);
+}
+
+.dept-stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--text-muted, #64748B);
+  margin-bottom: 6px;
+}
+
+.dept-stat-row strong {
+  color: var(--text-main, #0F172A);
+}

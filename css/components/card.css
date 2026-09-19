@@ -1,0 +1,270 @@
+/**
+ * Hotel Operations System - Card & Panel Components
+ */
+
+/* Generic Surface Card (Mobile Staff View) */
+.card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 14px;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Administrative Control Panels */
+.panel {
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  padding: 22px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 20px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.panel-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Gateway Interactive Cards (index.html) */
+.portal-card {
+  background: var(--card-bg-dark);
+  border: 1px solid #334155;
+  border-radius: var(--r-xl);
+  padding: 24px 20px;
+  text-align: left;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.portal-card:hover {
+  border-color: var(--brand-orange-light);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.4);
+}
+
+.card-icon {
+  font-size: 2.2rem;
+  margin-bottom: 12px;
+}
+
+.card-title-lg {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 6px;
+}
+
+.card-desc {
+  font-size: 0.85rem;
+  color: var(--text-sub);
+  line-height: 1.45;
+  margin-bottom: 16px;
+}
+
+/* Incident & Work Order Cards (Staff View) */
+.case-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  padding: 14px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.case-card.highlight {
+  border-left: 4px solid var(--accent);
+}
+
+.case-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.case-id-txt {
+  font-family: var(--font-en);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+
+.case-subj-txt {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.case-act-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-subtle);
+  flex-wrap: wrap;
+}
+
+/* Prominent Assignee Banner */
+.assignee-box {
+  background: #F8FAFC;
+  border: 1px solid var(--border-subtle);
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.assignee-name {
+  font-weight: 600;
+  color: #0F172A;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.assignee-call {
+  color: var(--dept-front);
+  font-weight: 600;
+  text-decoration: none;
+  background: var(--dept-front-bg);
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+}
+
+/* Executive KPI Cards */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.kpi-box {
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.kpi-lbl {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kpi-num {
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-family: var(--font-en);
+  color: var(--text-main);
+  margin-top: 4px;
+  line-height: 1;
+}
+
+/* Department Daily KPI Cards */
+.dept-daily-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.dept-kpi-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.dept-kpi-card.border-front { border-top: 4px solid var(--dept-front); }
+.dept-kpi-card.border-hk { border-top: 4px solid var(--dept-hk); }
+.dept-kpi-card.border-eng { border-top: 4px solid var(--dept-eng); }
+.dept-kpi-card.border-it { border-top: 4px solid var(--dept-it); }
+
+.dept-kpi-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.dept-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border-subtle);
+  font-size: 0.85rem;
+}
+
+.dept-stat-row:last-child {
+  border-bottom: none;
+}
+
+/* Timeline Activity Cards */
+.timeline-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  border-left: 4px solid #CBD5E1;
+}
+
+.timeline-card.dept-ENG { border-left-color: var(--dept-eng); }
+.timeline-card.dept-HK { border-left-color: var(--dept-hk); }
+.timeline-card.dept-IT { border-left-color: var(--dept-it); }
+.timeline-card.dept-FRONT { border-left-color: var(--dept-front); }
+.timeline-card.dept-ADMIN { border-left-color: var(--dept-admin); }

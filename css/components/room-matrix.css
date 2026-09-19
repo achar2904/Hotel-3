@@ -1,0 +1,150 @@
+/**
+ * Hotel Operations System - 422 Rooms Inventory Grid & Master Data Tables
+ */
+
+/* 422 Interactive Rooms Visual Grid */
+.room-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+  gap: 8px;
+  max-height: 520px;
+  overflow-y: auto;
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  background: #F8FAFC;
+}
+
+.room-btn-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 4px;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--border-subtle);
+  background: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  font-family: var(--font-en);
+  position: relative;
+  user-select: none;
+}
+
+.room-btn-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  border-color: #94A3B8;
+}
+
+.room-btn-tile .room-num {
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.room-btn-tile .room-floor-tag {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-family: var(--font-th);
+  margin-top: 1px;
+}
+
+.room-btn-tile .room-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-top: 5px;
+}
+
+/* Room Status: Available (Green) */
+.room-btn-tile.available {
+  background: #FFFFFF;
+  border-color: #E2E8F0;
+}
+
+.room-btn-tile.available:hover {
+  border-color: #10B981;
+  background: #F0FDF4;
+}
+
+.room-btn-tile.available .room-num {
+  color: #1E293B;
+}
+
+.room-btn-tile.available .room-dot {
+  background: #10B981;
+}
+
+/* Room Status: Maintenance (Red with Pulse Animation) */
+.room-btn-tile.maintenance {
+  background: #FEF2F2;
+  border-color: #FCA5A5;
+}
+
+.room-btn-tile.maintenance:hover {
+  border-color: #EF4444;
+  background: #FEE2E2;
+}
+
+.room-btn-tile.maintenance .room-num {
+  color: #DC2626;
+}
+
+.room-btn-tile.maintenance .room-dot {
+  background: #EF4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+  animation: pulseRed 2s infinite;
+}
+
+@keyframes pulseRed {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+}
+
+/* Master Data Table */
+.table-responsive {
+  overflow-x: auto;
+  width: 100%;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.data-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.88rem;
+}
+
+.data-tbl th {
+  background: #F8FAFC;
+  color: #475569;
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+
+.data-tbl td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+}
+
+.data-tbl tr:hover {
+  background: #F8FAFC;
+}
