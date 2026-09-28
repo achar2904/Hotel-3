@@ -138,14 +138,35 @@ async function resumeWork(id) {
 }
 
 /**
- * Open Task Completion Modal
+ * Open Task Completion Modal (Dual-Option: Close Only vs Close & Request HK)
  * @param {string} id
  */
 function openDoneModal(id) {
   const inp = document.getElementById('doneCaseId');
   if (inp) inp.value = id;
+
+  const optCloseOnly = document.getElementById('optCloseOnly');
+  if (optCloseOnly) optCloseOnly.checked = true;
+
+  const hkNoteRow = document.getElementById('hkNoteRow');
+  if (hkNoteRow) hkNoteRow.style.display = 'none';
+
+  const doneHkNote = document.getElementById('doneHkNote');
+  if (doneHkNote) doneHkNote.value = '';
+
   const m = document.getElementById('popDone');
   if (m) m.classList.add('show');
+}
+
+/**
+ * Toggle Housekeeping Note input based on selected radio
+ */
+function toggleHkNoteBox() {
+  const optCloseHk = document.getElementById('optCloseHk');
+  const hkNoteRow = document.getElementById('hkNoteRow');
+  if (hkNoteRow && optCloseHk) {
+    hkNoteRow.style.display = optCloseHk.checked ? 'block' : 'none';
+  }
 }
 
 /**
@@ -161,12 +182,47 @@ function closeDoneModal() {
  */
 async function confirmDone() {
   const id = document.getElementById('doneCaseId')?.value;
-  const note = document.getElementById('doneNote')?.value;
-  await fetch('/api/cases/done', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ caseId: id, note })
-  });
-  closeDoneModal();
-  await renderMyQueue();
+  const note = document.getElementById('doneNote')?.value?.trim() || 'ดำเนินการซ่อมเสร็จสิ้น ทดสอบใช้งานได้เรียบร้อย';
+  const requestHk = document.getElementById('optCloseHk')?.checked || false;
+  const hkNote = document.getElementById('doneHkNote')?.value?.trim() || '';
+
+  const btn = document.getElementById('btnConfirmDone');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = 'กำลังบันทึกลง MySQL...';
+  }
+
+  try {
+    const res = await fetch('/api/cases/done', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        caseId: id,
+        note,
+        requestHk,
+        hkNote
+      })
+    });
+
+    const result = await res.json();
+    if (!res.ok || !result.success) {
+      alert('เกิดข้อผิดพลาด: ' + (result.message || 'ไม่สามารถปิดงานได้ค่ะ'));
+      return;
+    }
+
+    closeDoneModal();
+    if (result.newHkCaseId) {
+      alert(`ปิดงานซ่อมเรียบร้อย และระบบได้เปิดงานทำความสะอาด #${result.newHkCaseId} ส่งเข้าคิวแผนกแม่บ้าน (HK) เรียบร้อยแล้วค่ะ!`);
+    } else {
+      alert('ปิดงานเรียบร้อยแล้วค่ะ');
+    }
+    await renderMyQueue();
+  } catch (err) {
+    alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์ค่ะ');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = 'ยืนยันปิดงาน';
+    }
+  }
 }

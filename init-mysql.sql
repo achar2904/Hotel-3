@@ -145,10 +145,11 @@ CREATE TABLE `cases` (
   `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   `case_no` VARCHAR(30) NOT NULL UNIQUE,
   `loc` VARCHAR(100) NOT NULL,
+  `room_no` VARCHAR(20) NULL,
   `dept_from` VARCHAR(20) NOT NULL,
   `dept_to` VARCHAR(20) NOT NULL,
   `subject` VARCHAR(255) NOT NULL,
-  `photo_url` TEXT NULL,
+  `photo_url` LONGTEXT NULL,
   `priority` ENUM('NORMAL', 'URGENT', 'EMERGENCY') NOT NULL DEFAULT 'NORMAL',
   `status` ENUM('NEW', 'IN_PROGRESS', 'WAITING_PARTS', 'CLOSED') NOT NULL DEFAULT 'NEW',
   `reporter_name` VARCHAR(100) NOT NULL,
@@ -161,9 +162,11 @@ CREATE TABLE `cases` (
   `closed_at` VARCHAR(50) NULL,
   `close_note` TEXT NULL,
   `logs` LONGTEXT NULL,
+  `parent_case_no` VARCHAR(30) NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX `idx_cases_status` (`status`),
+  INDEX `idx_cases_room_no` (`room_no`),
   INDEX `idx_cases_dept_to` (`dept_to`),
   INDEX `idx_cases_dept_from` (`dept_from`),
   INDEX `idx_cases_assignee` (`assignee_code`)
@@ -230,5 +233,20 @@ INSERT INTO `cases` (
 );
 
 UPDATE `cases` SET `closed_by` = 'พี่บัวผัน (#100201)', `closed_at` = '11:15 น.', `close_note` = 'ทำความสะอาดและจัดเตรียมห้องเรียบร้อยพร้อมเปิดขาย' WHERE `case_no` = 'CASE-20260908-0003';
+
+-- -----------------------------------------------------------------------------
+-- 6. Sessions Table (Persistent Auth Tokens)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `sessions` (
+  `token` VARCHAR(64) NOT NULL PRIMARY KEY,
+  `user_id` INT UNSIGNED NOT NULL,
+  `user_code` VARCHAR(60) NOT NULL,
+  `role` VARCHAR(20) NOT NULL,
+  `data` MEDIUMTEXT NOT NULL,
+  `expires_at` BIGINT NOT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX `idx_sessions_expires` (`expires_at`),
+  INDEX `idx_sessions_user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

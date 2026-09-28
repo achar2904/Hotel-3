@@ -81,10 +81,21 @@ function filterUserRoomsUI() {
 
   filtered.forEach(r => {
     const btn = document.createElement('button');
-    const isMaint = r.status === 'MAINTENANCE';
+    let statusClass = 'available';
+    let statusTh = 'พร้อมใช้งาน';
+    if (r.status === 'OCCUPIED') {
+      statusClass = 'occupied';
+      statusTh = 'มีแขกพัก';
+    } else if (r.status === 'CLEANING') {
+      statusClass = 'cleaning';
+      statusTh = 'รอทำความสะอาด';
+    } else if (r.status === 'MAINTENANCE' || r.status === 'CLOSED') {
+      statusClass = 'maintenance';
+      statusTh = 'ปิดซ่อม: ' + (r.closed_reason || '');
+    }
     btn.type = 'button';
-    btn.className = `room-btn-tile ${isMaint ? 'maintenance' : 'available'}`;
-    btn.title = `ห้อง ${r.room_no} (ชั้น ${r.floor}) - ${isMaint ? 'ปิดซ่อม: ' + (r.closed_reason || '') : 'พร้อมใช้งาน'}`;
+    btn.className = `room-btn-tile ${statusClass}`;
+    btn.title = `ห้อง ${r.room_no} (ชั้น ${r.floor}) - ${statusTh}`;
     btn.onclick = () => openUserRoomDetail(r.room_no);
 
     btn.innerHTML = `
@@ -110,7 +121,7 @@ function setUserRoomFloorFilter(floor, btnEl) {
 }
 
 /**
- * Filter Rooms by Status (AVAILABLE / MAINTENANCE)
+ * Filter Rooms by Status (ALL / AVAILABLE / OCCUPIED / CLEANING / MAINTENANCE)
  */
 function setUserRoomStatusFilter(status, btnEl) {
   userRoomStatus = status;
@@ -142,21 +153,25 @@ function openUserRoomDetail(roomNo) {
 
   if (badge) {
     if (r.status === 'AVAILABLE') {
-      badge.innerHTML = '<span class="tag tag-CLOSED" style="font-size:0.85rem; padding:4px 10px;">พร้อมใช้งาน (AVAILABLE)</span>';
+      badge.innerHTML = '<span class="tag tag-CLOSED" style="font-size:0.85rem; padding:4px 10px; background:#ECFDF5; color:#065F46; border:1px solid #A7F3D0;">พร้อมขาย (AVAILABLE)</span>';
+    } else if (r.status === 'OCCUPIED') {
+      badge.innerHTML = '<span class="tag" style="font-size:0.85rem; padding:4px 10px; background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;">มีแขกพัก (OCCUPIED)</span>';
+    } else if (r.status === 'CLEANING') {
+      badge.innerHTML = '<span class="tag" style="font-size:0.85rem; padding:4px 10px; background:#FFFBEB; color:#92400E; border:1px solid #FDE68A;">รอทำความสะอาด (CLEANING)</span>';
     } else {
-      badge.innerHTML = '<span class="tag tag-NEW" style="font-size:0.85rem; padding:4px 10px;">ปิดซ่อมบำรุง (MAINTENANCE)</span>';
+      badge.innerHTML = '<span class="tag tag-NEW" style="font-size:0.85rem; padding:4px 10px; background:#FEF2F2; color:#991B1B; border:1px solid #FECACA;">ปิดซ่อมบำรุง (MAINTENANCE)</span>';
     }
   }
 
   if (reason) {
-    reason.innerHTML = `<strong>สาเหตุ / บันทึกล่าสุด:</strong> ${r.closed_reason || (r.status === 'AVAILABLE' ? 'ห้องว่าง สภาพสมบูรณ์ พร้อมเปิดรับแขก' : 'ปิดซ่อมบำรุง')}`;
+    reason.innerHTML = `<strong>สาเหตุ / บันทึกล่าสุด:</strong> ${r.closed_reason || (r.status === 'AVAILABLE' ? 'ห้องว่าง สภาพสมบูรณ์ พร้อมเปิดรับแขก' : '-')}`;
   }
   if (updated) {
     updated.innerText = `อัปเดตล่าสุด: ${r.updated_time || 'วันนี้'}`;
   }
 
   // Cross-reference cases related to this room
-  const roomCases = cachedUserCases.filter(c => c.loc && (c.loc.includes(roomNo) || c.loc.includes(' ' + roomNo)));
+  const roomCases = cachedUserCases.filter(c => (c.roomNo && String(c.roomNo) === String(roomNo)) || (c.loc && (c.loc.includes(roomNo) || c.loc.includes(' ' + roomNo))));
   const timeline = document.getElementById('userModalRoomTimeline');
 
   if (timeline) {
@@ -182,11 +197,15 @@ function openUserRoomDetail(roomNo) {
   }
 
   const radioAvail = document.getElementById('userRadioAvail');
+  const radioOccupied = document.getElementById('userRadioOccupied');
+  const radioCleaning = document.getElementById('userRadioCleaning');
   const radioMaint = document.getElementById('userRadioMaint');
   const reasonInp = document.getElementById('userModalStatusReasonInp');
 
   if (radioAvail) radioAvail.checked = (r.status === 'AVAILABLE');
-  if (radioMaint) radioMaint.checked = (r.status === 'MAINTENANCE');
+  if (radioOccupied) radioOccupied.checked = (r.status === 'OCCUPIED');
+  if (radioCleaning) radioCleaning.checked = (r.status === 'CLEANING');
+  if (radioMaint) radioMaint.checked = (r.status === 'MAINTENANCE' || r.status === 'CLOSED');
   if (reasonInp) reasonInp.value = r.closed_reason || '';
 
   if (modal) modal.classList.add('show');
@@ -205,8 +224,13 @@ async function saveUserRoomStatusChange() {
   const radio = document.querySelector('input[name="userRoomStatusRadio"]:checked');
   const newStatus = radio ? radio.value : 'AVAILABLE';
   const reasonInp = document.getElementById('userModalStatusReasonInp')?.value.trim() || '';
-  const defaultReason = (newStatus === 'AVAILABLE') ? 'ฟร้อนท์เปิดห้องพักพร้อมใช้งาน สภาพสมบูรณ์' : 'ฟร้อนท์สั่งปิดห้องพัก/แจ้งซ่อมบำรุง';
-  const reason = reasonInp || defaultReason;
+  const statusLabels = {
+    AVAILABLE: 'เปิดห้องพักพร้อมขาย สภาพสมบูรณ์',
+    OCCUPIED: 'มีแขกเข้าพัก (Checked-in)',
+    CLEANING: 'ห้องรอแม่บ้านทำความสะอาด',
+    MAINTENANCE: 'สั่งปิดห้องซ่อมบำรุง'
+  };
+  const reason = reasonInp || statusLabels[newStatus] || 'อัปเดตสถานะห้องพักโดยฟร้อนท์/แอดมิน';
 
   const btn = document.getElementById('btnSaveUserRoomStatus');
   if (btn) {

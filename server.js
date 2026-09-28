@@ -6,8 +6,47 @@ const db = require('./db');
 
 const PORT = process.env.PORT || 8080;
 
-// Active In-Memory Session Store
+// Active In-Memory Fast Cache + MySQL Persistent Sessions
 const SESSIONS = new Map();
+
+async function ensureDatabaseSchema() {
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        token VARCHAR(64) NOT NULL PRIMARY KEY,
+        user_id INT UNSIGNED NOT NULL,
+        user_code VARCHAR(60) NOT NULL,
+        role VARCHAR(20) NOT NULL,
+        data MEDIUMTEXT NOT NULL,
+        expires_at BIGINT NOT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_sessions_expires (expires_at),
+        INDEX idx_sessions_user (user_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `);
+
+    // Check room_no column in cases
+    const [cols] = await db.query(`
+      SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cases' AND COLUMN_NAME = 'room_no'
+    `);
+    if (cols.length === 0) {
+      await db.query(`ALTER TABLE cases ADD COLUMN room_no VARCHAR(20) NULL AFTER loc, ADD INDEX idx_cases_room_no (room_no)`);
+    }
+
+    // Check parent_case_no column in cases
+    const [pcols] = await db.query(`
+      SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cases' AND COLUMN_NAME = 'parent_case_no'
+    `);
+    if (pcols.length === 0) {
+      await db.query(`ALTER TABLE cases ADD COLUMN parent_case_no VARCHAR(30) NULL AFTER logs`);
+    }
+  } catch (err) {
+    console.error('[Schema Verify] Note:', err.message);
+  }
+}
+ensureDatabaseSchema();
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -33,17 +72,39 @@ function parseCookies(req) {
   return list;
 }
 
-function getSession(req) {
+async function getSession(req) {
   const cookies = parseCookies(req);
   const token = cookies.hotel_session;
   if (!token) return null;
-  const session = SESSIONS.get(token);
-  if (!session) return null;
-  if (Date.now() > session.expiresAt) {
-    SESSIONS.delete(token);
-    return null;
+
+  // 1. Check in-memory fast cache
+  const cached = SESSIONS.get(token);
+  if (cached) {
+    if (Date.now() > cached.expiresAt) {
+      SESSIONS.delete(token);
+      try { await db.query('DELETE FROM sessions WHERE token = ?', [token]); } catch (e) {}
+      return null;
+    }
+    return cached;
   }
-  return session;
+
+  // 2. Fallback to MySQL persistent sessions
+  try {
+    const [rows] = await db.query(
+      'SELECT data, expires_at FROM sessions WHERE token = ? AND expires_at > ? LIMIT 1',
+      [token, Date.now()]
+    );
+    if (rows.length > 0) {
+      const sessionData = JSON.parse(rows[0].data);
+      sessionData.expiresAt = Number(rows[0].expires_at);
+      SESSIONS.set(token, sessionData);
+      return sessionData;
+    }
+  } catch (err) {
+    console.error('[getSession] Error reading session from MySQL:', err.message);
+  }
+
+  return null;
 }
 
 function parseJsonBody(req) {
@@ -102,7 +163,8 @@ const server = http.createServer(async (req, res) => {
       }
 
       const user = rows[0];
-      const validPin = (user.pin && user.pin === password) || (password === '123456');
+      // Secure PIN authentication: Compare against user's specific PIN only (No master backdoor)
+      const validPin = Boolean(user.pin && String(user.pin).trim() === password);
       if (!validPin) {
         return sendJson(res, 401, { success: false, message: 'รหัสผ่าน PIN ไม่ถูกต้องค่ะ' });
       }
@@ -129,7 +191,18 @@ const server = http.createServer(async (req, res) => {
         expiresAt: Date.now() + maxAge
       };
 
+      // Store in memory cache & persist to MySQL
       SESSIONS.set(token, sessionData);
+      try {
+        await db.query(
+          `INSERT INTO sessions (token, user_id, user_code, role, data, expires_at) 
+           VALUES (?, ?, ?, ?, ?, ?) 
+           ON DUPLICATE KEY UPDATE data = VALUES(data), expires_at = VALUES(expires_at)`,
+          [token, user.id, user.username, roleUpper, JSON.stringify(sessionData), sessionData.expiresAt]
+        );
+      } catch (sessErr) {
+        console.error('[API /api/login] Warning: Failed to persist session to MySQL:', sessErr.message);
+      }
 
       let redirectUrl = '/user.html';
       if (roleUpper === 'ADMIN' || roleUpper === 'OWNER') {
@@ -153,7 +226,10 @@ const server = http.createServer(async (req, res) => {
   if (method === 'POST' && reqPath === '/api/logout') {
     const cookies = parseCookies(req);
     const token = cookies.hotel_session;
-    if (token) SESSIONS.delete(token);
+    if (token) {
+      SESSIONS.delete(token);
+      try { await db.query('DELETE FROM sessions WHERE token = ?', [token]); } catch (e) {}
+    }
 
     return sendJson(res, 200, { success: true, message: 'ออกจากระบบเรียบร้อยแล้วค่ะ' }, {
       'Set-Cookie': `hotel_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`
@@ -162,7 +238,7 @@ const server = http.createServer(async (req, res) => {
 
   // 3. GET /api/me — Returns current authenticated user
   if (method === 'GET' && reqPath === '/api/me') {
-    const session = getSession(req);
+    const session = await getSession(req);
     if (!session) {
       return sendJson(res, 401, { authenticated: false });
     }
@@ -171,7 +247,7 @@ const server = http.createServer(async (req, res) => {
 
   // 4. GET /api/rooms — Fetch all 422 rooms from MySQL
   if (method === 'GET' && reqPath === '/api/rooms') {
-    const session = getSession(req);
+    const session = await getSession(req);
     if (!session) return sendJson(res, 401, { success: false, message: 'Unauthorized' });
 
     try {
@@ -188,10 +264,10 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // 5. POST /api/rooms/status — Room status override in MySQL (Admin & Front Office)
+  // 5. POST /api/rooms/status — Room status override in MySQL (Admin & Front Office Manual Control)
   if (method === 'POST' && reqPath === '/api/rooms/status') {
-    const session = getSession(req);
-    const isAllowed = session && (session.user.role === 'ADMIN' || session.user.dept === 'FRONT');
+    const session = await getSession(req);
+    const isAllowed = session && (session.user.role === 'ADMIN' || session.user.dept === 'FRONT' || session.user.role === 'OWNER');
     if (!isAllowed) {
       return sendJson(res, 403, { success: false, message: 'สิทธิ์เฉพาะแอดมินและแผนกฟร้อนท์เท่านั้นค่ะ' });
     }
@@ -199,16 +275,18 @@ const server = http.createServer(async (req, res) => {
     try {
       const data = await parseJsonBody(req);
       const roomNo = String(data.roomNo || '').trim();
-      const status = data.status === 'AVAILABLE' ? 'AVAILABLE' : 'MAINTENANCE';
+      const validStatuses = ['AVAILABLE', 'OCCUPIED', 'CLEANING', 'MAINTENANCE', 'CLOSED'];
+      const rawStatus = String(data.status || 'AVAILABLE').toUpperCase();
+      const status = validStatuses.includes(rawStatus) ? rawStatus : 'AVAILABLE';
       const reason = String(data.reason || '').trim();
-      const updater = session.user.name;
+      const updater = `${session.user.name} (${session.user.dept || session.user.role})`;
 
       await db.query(
         'UPDATE rooms SET status = ?, closed_reason = ?, updated_by = ?, updated_at = NOW() WHERE room_no = ?',
         [status, reason, updater, roomNo]
       );
 
-      return sendJson(res, 200, { success: true, message: `อัปเดตห้อง ${roomNo} สำเร็จแล้วค่ะ` });
+      return sendJson(res, 200, { success: true, message: `อัปเดตห้อง ${roomNo} เป็นสถานะ ${status} เรียบร้อยแล้วค่ะ` });
     } catch (err) {
       console.error('[API /api/rooms/status] Error:', err);
       return sendJson(res, 500, { success: false, message: err.message });
@@ -217,14 +295,14 @@ const server = http.createServer(async (req, res) => {
 
   // 6. GET /api/cases — Fetch all cases from MySQL
   if (method === 'GET' && reqPath === '/api/cases') {
-    const session = getSession(req);
+    const session = await getSession(req);
     if (!session) return sendJson(res, 401, { success: false, message: 'Unauthorized' });
 
     try {
       const [cases] = await db.query(
-        `SELECT id, case_no as id_str, loc, dept_from, dept_to, subject, photo_url, priority, status,
+        `SELECT id, case_no as id_str, loc, room_no, dept_from, dept_to, subject, photo_url, priority, status,
                 reporter_name, reporter_code, assignee_name, assignee_code, assignee_phone,
-                accepted_at, closed_by, closed_at, close_note, logs,
+                accepted_at, closed_by, closed_at, close_note, logs, parent_case_no,
                 DATE_FORMAT(created_at, '%H:%i น.') as time
          FROM cases 
          ORDER BY id DESC`
@@ -244,6 +322,7 @@ const server = http.createServer(async (req, res) => {
           deptFrom: c.dept_from,
           deptTo: c.dept_to,
           loc: c.loc,
+          roomNo: c.room_no,
           subject: c.subject,
           photo: c.photo_url,
           prio: c.priority,
@@ -257,6 +336,7 @@ const server = http.createServer(async (req, res) => {
           closedBy: c.closed_by,
           closedAt: c.closed_at,
           closeNote: c.close_note,
+          parentCaseNo: c.parent_case_no,
           logs: logsArr
         };
       });
@@ -268,9 +348,9 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // 7. POST /api/cases — Create new case in MySQL
+  // 7. POST /api/cases — Create new case in MySQL (Without auto-locking rooms)
   if (method === 'POST' && reqPath === '/api/cases') {
-    const session = getSession(req);
+    const session = await getSession(req);
     if (!session) return sendJson(res, 401, { success: false, message: 'Unauthorized' });
 
     try {
@@ -279,52 +359,63 @@ const server = http.createServer(async (req, res) => {
       const subject = String(data.subject || '').trim();
       const deptTo = String(data.deptTo || 'ENG').trim();
       const photoUrl = data.photo || null;
+      let roomNo = data.roomNo ? String(data.roomNo).trim() : null;
 
       if (!loc || !subject) {
-        return sendJson(res, 400, { success: false, message: 'กรุณาระบุเลขห้องและปัญหาที่พบค่ะ' });
+        return sendJson(res, 400, { success: false, message: 'กรุณาระบุเลขห้อง/สถานที่ และปัญหาที่พบค่ะ' });
       }
 
-      // Generate atomic Case Number
-      const [cntRow] = await db.query('SELECT COUNT(*) as total FROM cases');
-      const nextNum = (cntRow[0].total || 0) + 1;
-      const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-      const caseNo = `CASE-${todayStr}-${String(nextNum).padStart(4, '0')}`;
+      if (!roomNo) {
+        const rMatch = loc.match(/(?:ห้อง|room)?\s*(\d{3,4})\b/i);
+        if (rMatch) {
+          roomNo = rMatch[1];
+        }
+      }
 
-      const nowStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
-      const initialLogs = JSON.stringify([`${nowStr} สร้างเคสโดย ${session.user.name} (#${session.user.code})`]);
+      const priority = ['NORMAL', 'URGENT', 'EMERGENCY'].includes(data.priority) ? data.priority : 'NORMAL';
 
-      await db.query(
-        `INSERT INTO cases (
-          case_no, loc, dept_from, dept_to, subject, photo_url, priority, status,
-          reporter_name, reporter_code, logs
-        ) VALUES (?, ?, ?, ?, ?, ?, 'NORMAL', 'NEW', ?, ?, ?)`,
-        [caseNo, loc, session.user.dept, deptTo, subject, photoUrl, session.user.name, session.user.code, initialLogs]
-      );
+      const conn = await db.getConnection();
+      try {
+        await conn.beginTransaction();
 
-      // If room specified, set room to MAINTENANCE in MySQL automatically
-      const roomMatch = loc.match(/\d+/);
-      if (roomMatch) {
-        const roomNo = roomMatch[0];
-        await db.query(
-          `UPDATE rooms SET status = 'MAINTENANCE', closed_reason = ? WHERE room_no = ?`,
-          [`เคส ${caseNo}: ${subject}`, roomNo]
+        const [cntRow] = await conn.query('SELECT MAX(id) as maxId FROM cases');
+        const nextNum = (cntRow[0].maxId || 0) + 1;
+        const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const caseNo = `CASE-${todayStr}-${String(nextNum).padStart(4, '0')}`;
+
+        const nowStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
+        const initialLogs = JSON.stringify([`${nowStr} สร้างเคสโดย ${session.user.name} (#${session.user.code})`]);
+
+        await conn.query(
+          `INSERT INTO cases (
+            case_no, loc, room_no, dept_from, dept_to, subject, photo_url, priority, status,
+            reporter_name, reporter_code, logs
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'NEW', ?, ?, ?)`,
+          [caseNo, loc, roomNo, session.user.dept || 'FRONT', deptTo, subject, photoUrl, priority, session.user.name, session.user.code, initialLogs]
         );
-      }
 
-      return sendJson(res, 200, {
-        success: true,
-        caseId: caseNo,
-        summary: `${loc} ➔ ${deptTo} (${subject})`
-      });
+        await conn.commit();
+
+        return sendJson(res, 200, {
+          success: true,
+          caseId: caseNo,
+          summary: `${loc} ➔ ${deptTo} (${subject})`
+        });
+      } catch (txErr) {
+        await conn.rollback();
+        throw txErr;
+      } finally {
+        conn.release();
+      }
     } catch (err) {
       console.error('[API POST /api/cases] Error:', err);
       return sendJson(res, 500, { success: false, message: err.message });
     }
   }
 
-  // 8. POST /api/cases/accept — Claim job in MySQL
+  // 8. POST /api/cases/accept — Claim job in MySQL (Optimistic Lock & Dept Action Guard)
   if (method === 'POST' && reqPath === '/api/cases/accept') {
-    const session = getSession(req);
+    const session = await getSession(req);
     if (!session) return sendJson(res, 401, { success: false, message: 'Unauthorized' });
 
     try {
@@ -332,21 +423,38 @@ const server = http.createServer(async (req, res) => {
       const caseId = data.caseId;
       const nowStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
 
-      const [cRows] = await db.query('SELECT logs FROM cases WHERE case_no = ? LIMIT 1', [caseId]);
-      if (cRows.length === 0) return sendJson(res, 404, { success: false, message: 'Case not found' });
+      const [cRows] = await db.query('SELECT dept_to, status, assignee_name, logs FROM cases WHERE case_no = ? LIMIT 1', [caseId]);
+      if (cRows.length === 0) return sendJson(res, 404, { success: false, message: 'ไม่พบเคสนี้ในระบบค่ะ' });
+
+      const curCase = cRows[0];
+
+      // Action Guard: Must belong to target department or be Admin
+      if (session.user.role !== 'ADMIN' && session.user.dept !== curCase.dept_to) {
+        return sendJson(res, 403, { success: false, message: `สิทธิ์เฉพาะพนักงานแผนก ${curCase.dept_to} หรือแอดมินเท่านั้นค่ะ` });
+      }
 
       let logs = [];
-      try { logs = JSON.parse(cRows[0].logs || '[]'); } catch (e) { logs = []; }
+      try { logs = JSON.parse(curCase.logs || '[]'); } catch (e) { logs = []; }
       logs.push(`${nowStr} ${session.user.name} (#${session.user.code}) กดรับงาน`);
 
-      await db.query(
+      // Optimistic Lock: Only update if status is currently NEW
+      const [updateRes] = await db.query(
         `UPDATE cases SET status = 'IN_PROGRESS', assignee_name = ?, assignee_code = ?, 
                 assignee_phone = ?, accepted_at = ?, logs = ? 
-         WHERE case_no = ?`,
+         WHERE case_no = ? AND status = 'NEW'`,
         [session.user.name, session.user.code, session.user.phone, nowStr, JSON.stringify(logs), caseId]
       );
 
-      return sendJson(res, 200, { success: true });
+      if (updateRes.affectedRows === 0) {
+        return sendJson(res, 409, {
+          success: false,
+          message: curCase.assignee_name 
+            ? `เคสนี้มีเพื่อนพนักงาน (${curCase.assignee_name}) รับงานไปแล้วค่ะ`
+            : `เคสนี้ไม่อยู่ในสถานะรอดำเนินการ (สถานะปัจจุบัน: ${curCase.status}) ค่ะ`
+        });
+      }
+
+      return sendJson(res, 200, { success: true, message: 'กดรับงานสำเร็จแล้วค่ะ' });
     } catch (err) {
       return sendJson(res, 500, { success: false, message: err.message });
     }
@@ -354,7 +462,7 @@ const server = http.createServer(async (req, res) => {
 
   // 9. POST /api/cases/wait-parts
   if (method === 'POST' && reqPath === '/api/cases/wait-parts') {
-    const session = getSession(req);
+    const session = await getSession(req);
     if (!session) return sendJson(res, 401, { success: false, message: 'Unauthorized' });
 
     try {
@@ -362,7 +470,14 @@ const server = http.createServer(async (req, res) => {
       const caseId = data.caseId;
       const nowStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
 
-      const [cRows] = await db.query('SELECT logs FROM cases WHERE case_no = ? LIMIT 1', [caseId]);
+      const [cRows] = await db.query('SELECT dept_to, logs FROM cases WHERE case_no = ? LIMIT 1', [caseId]);
+      if (cRows.length === 0) return sendJson(res, 404, { success: false, message: 'Case not found' });
+
+      // Action Guard
+      if (session.user.role !== 'ADMIN' && session.user.dept !== cRows[0].dept_to) {
+        return sendJson(res, 403, { success: false, message: 'สิทธิ์เฉพาะพนักงานแผนกที่รับผิดชอบค่ะ' });
+      }
+
       let logs = [];
       try { logs = JSON.parse(cRows[0].logs || '[]'); } catch (e) { logs = []; }
       logs.push(`${nowStr} พักเวลาเนื่องจากรออะไหล่ โดย ${session.user.name}`);
@@ -380,7 +495,7 @@ const server = http.createServer(async (req, res) => {
 
   // 10. POST /api/cases/resume
   if (method === 'POST' && reqPath === '/api/cases/resume') {
-    const session = getSession(req);
+    const session = await getSession(req);
     if (!session) return sendJson(res, 401, { success: false, message: 'Unauthorized' });
 
     try {
@@ -388,7 +503,14 @@ const server = http.createServer(async (req, res) => {
       const caseId = data.caseId;
       const nowStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
 
-      const [cRows] = await db.query('SELECT logs FROM cases WHERE case_no = ? LIMIT 1', [caseId]);
+      const [cRows] = await db.query('SELECT dept_to, logs FROM cases WHERE case_no = ? LIMIT 1', [caseId]);
+      if (cRows.length === 0) return sendJson(res, 404, { success: false, message: 'Case not found' });
+
+      // Action Guard
+      if (session.user.role !== 'ADMIN' && session.user.dept !== cRows[0].dept_to) {
+        return sendJson(res, 403, { success: false, message: 'สิทธิ์เฉพาะพนักงานแผนกที่รับผิดชอบค่ะ' });
+      }
+
       let logs = [];
       try { logs = JSON.parse(cRows[0].logs || '[]'); } catch (e) { logs = []; }
       logs.push(`${nowStr} ดำเนินการต่อหลังได้รับอะไหล่ โดย ${session.user.name}`);
@@ -404,48 +526,95 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // 11. POST /api/cases/done — Close case in MySQL
+  // 11. POST /api/cases/done — Close case in MySQL (Dual-Option: Close Only or Close & Request Housekeeping)
   if (method === 'POST' && reqPath === '/api/cases/done') {
-    const session = getSession(req);
+    const session = await getSession(req);
     if (!session) return sendJson(res, 401, { success: false, message: 'Unauthorized' });
 
     try {
       const data = await parseJsonBody(req);
       const caseId = data.caseId;
-      const note = data.note || 'ดำเนินการซ่อมเสร็จสิ้น ทดสอบใช้งานได้เรียบร้อย';
+      const note = data.note || 'ดำเนินการเรียบร้อยแล้ว';
+      const requestHk = Boolean(data.requestHk);
+      const hkNote = String(data.hkNote || '').trim();
       const nowStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
 
-      const [cRows] = await db.query('SELECT loc, logs FROM cases WHERE case_no = ? LIMIT 1', [caseId]);
-      if (cRows.length === 0) return sendJson(res, 404, { success: false, message: 'Case not found' });
+      const [cRows] = await db.query('SELECT loc, room_no, dept_to, status, assignee_code, logs FROM cases WHERE case_no = ? LIMIT 1', [caseId]);
+      if (cRows.length === 0) return sendJson(res, 404, { success: false, message: 'ไม่พบเคสนี้ในระบบค่ะ' });
 
-      let logs = [];
-      try { logs = JSON.parse(cRows[0].logs || '[]'); } catch (e) { logs = []; }
-      logs.push(`${nowStr} ปิดงานเสร็จสิ้นโดย ${session.user.name} (#${session.user.code}) หมายเหตุ: "${note}"`);
-
-      await db.query(
-        `UPDATE cases SET status = 'CLOSED', closed_by = ?, closed_at = ?, close_note = ?, logs = ? 
-         WHERE case_no = ?`,
-        [`${session.user.name} (#${session.user.code})`, nowStr, note, JSON.stringify(logs), caseId]
-      );
-
-      // Auto-reopen room to AVAILABLE if no other open cases exist for this room
-      const loc = cRows[0].loc;
-      const roomMatch = loc.match(/\d+/);
-      if (roomMatch) {
-        const roomNo = roomMatch[0];
-        const [openCount] = await db.query(
-          `SELECT COUNT(*) as cnt FROM cases WHERE loc LIKE ? AND status != 'CLOSED'`,
-          [`%${roomNo}%`]
-        );
-        if (openCount[0].cnt === 0) {
-          await db.query(
-            `UPDATE rooms SET status = 'AVAILABLE', closed_reason = 'ปิดงานซ่อมเรียบร้อย สภาพห้องพร้อมขาย 100%' WHERE room_no = ?`,
-            [roomNo]
-          );
-        }
+      const curCase = cRows[0];
+      if (curCase.status === 'CLOSED') {
+        return sendJson(res, 400, { success: false, message: 'เคสนี้ถูกปิดไปเรียบร้อยแล้วค่ะ' });
       }
 
-      return sendJson(res, 200, { success: true });
+      // Action Guard
+      const isAllowed = session.user.role === 'ADMIN' || 
+                        session.user.dept === curCase.dept_to || 
+                        (curCase.assignee_code && curCase.assignee_code === session.user.code);
+      if (!isAllowed) {
+        return sendJson(res, 403, { success: false, message: 'สิทธิ์เฉพาะผู้รับงาน แผนกที่รับผิดชอบ หรือแอดมินเท่านั้นค่ะ' });
+      }
+
+      const conn = await db.getConnection();
+      try {
+        await conn.beginTransaction();
+
+        let logs = [];
+        try { logs = JSON.parse(curCase.logs || '[]'); } catch (e) { logs = []; }
+        let logText = `${nowStr} ปิดงานเสร็จสิ้นโดย ${session.user.name} (#${session.user.code}) หมายเหตุ: "${note}"`;
+        if (requestHk) {
+          logText += ' [ส่งต่องานทำความสะอาดให้แม่บ้าน (HK)]';
+        }
+        logs.push(logText);
+
+        await conn.query(
+          `UPDATE cases SET status = 'CLOSED', closed_by = ?, closed_at = ?, close_note = ?, logs = ? 
+           WHERE case_no = ?`,
+          [`${session.user.name} (#${session.user.code})`, nowStr, note, JSON.stringify(logs), caseId]
+        );
+
+        let newHkCaseId = null;
+        if (requestHk) {
+          const [cntRow] = await conn.query('SELECT MAX(id) as maxId FROM cases');
+          const nextNum = (cntRow[0].maxId || 0) + 1;
+          const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+          newHkCaseId = `CASE-${todayStr}-${String(nextNum).padStart(4, '0')}`;
+
+          const hkSubj = `ทำความสะอาดหลังงานซ่อม (เคสเดิม #${caseId})` + (hkNote ? `: ${hkNote}` : '');
+          const hkLogs = JSON.stringify([`${nowStr} ส่งต่องานทำความสะอาดอัตโนมัติจากเคส #${caseId} โดย ${session.user.name} (#${session.user.code})`]);
+
+          await conn.query(
+            `INSERT INTO cases (
+              case_no, loc, room_no, dept_from, dept_to, subject, photo_url, priority, status,
+              reporter_name, reporter_code, parent_case_no, logs
+            ) VALUES (?, ?, ?, ?, 'HK', ?, NULL, 'NORMAL', 'NEW', ?, ?, ?, ?)`,
+            [
+              newHkCaseId,
+              curCase.loc,
+              curCase.room_no,
+              session.user.dept || 'ENG',
+              hkSubj,
+              session.user.name,
+              session.user.code,
+              caseId,
+              hkLogs
+            ]
+          );
+        }
+
+        await conn.commit();
+
+        return sendJson(res, 200, {
+          success: true,
+          message: requestHk ? `ปิดงานซ่อมเรียบร้อย และสร้างเคสทำความสะอาด #${newHkCaseId} ให้แม่บ้านแล้วค่ะ` : 'ปิดงานเรียบร้อยแล้วค่ะ',
+          newHkCaseId
+        });
+      } catch (txErr) {
+        await conn.rollback();
+        throw txErr;
+      } finally {
+        conn.release();
+      }
     } catch (err) {
       return sendJson(res, 500, { success: false, message: err.message });
     }
@@ -453,7 +622,7 @@ const server = http.createServer(async (req, res) => {
 
   // 12. POST /api/cases/transfer
   if (method === 'POST' && reqPath === '/api/cases/transfer') {
-    const session = getSession(req);
+    const session = await getSession(req);
     if (!session) return sendJson(res, 401, { success: false, message: 'Unauthorized' });
 
     try {
@@ -465,6 +634,11 @@ const server = http.createServer(async (req, res) => {
 
       const [cRows] = await db.query('SELECT dept_to, logs FROM cases WHERE case_no = ? LIMIT 1', [caseId]);
       if (cRows.length === 0) return sendJson(res, 404, { success: false, message: 'Case not found' });
+
+      // Action Guard
+      if (session.user.role !== 'ADMIN' && session.user.dept !== cRows[0].dept_to) {
+        return sendJson(res, 403, { success: false, message: 'สิทธิ์เฉพาะพนักงานแผนกที่รับผิดชอบเคสนี้ค่ะ' });
+      }
 
       const fromDept = cRows[0].dept_to;
       let logs = [];
@@ -486,7 +660,7 @@ const server = http.createServer(async (req, res) => {
 
   // 13. POST /api/cases/reroute (Admin only)
   if (method === 'POST' && reqPath === '/api/cases/reroute') {
-    const session = getSession(req);
+    const session = await getSession(req);
     if (!session || session.user.role !== 'ADMIN') {
       return sendJson(res, 403, { success: false, message: 'Admin only' });
     }
@@ -516,7 +690,7 @@ const server = http.createServer(async (req, res) => {
 
   // 14. POST /api/cases/force-close (Admin only)
   if (method === 'POST' && reqPath === '/api/cases/force-close') {
-    const session = getSession(req);
+    const session = await getSession(req);
     if (!session || session.user.role !== 'ADMIN') {
       return sendJson(res, 403, { success: false, message: 'Admin only' });
     }
@@ -545,7 +719,7 @@ const server = http.createServer(async (req, res) => {
 
   // 15. GET /api/staff — Workload aggregation from MySQL
   if (method === 'GET' && reqPath === '/api/staff') {
-    const session = getSession(req);
+    const session = await getSession(req);
     if (!session) return sendJson(res, 401, { success: false, message: 'Unauthorized' });
 
     try {
@@ -584,7 +758,7 @@ const server = http.createServer(async (req, res) => {
 
   // 16. GET /api/users — Fetch all users from MySQL (Admin & Owner)
   if (method === 'GET' && reqPath === '/api/users') {
-    const session = getSession(req);
+    const session = await getSession(req);
     if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'OWNER')) {
       return sendJson(res, 403, { success: false, message: 'สิทธิ์เฉพาะผู้ดูแลระบบและผู้บริหารเท่านั้นค่ะ' });
     }
@@ -606,7 +780,7 @@ const server = http.createServer(async (req, res) => {
 
   // 17. POST /api/users — Create new staff user in MySQL (Admin only)
   if (method === 'POST' && reqPath === '/api/users') {
-    const session = getSession(req);
+    const session = await getSession(req);
     if (!session || session.user.role !== 'ADMIN') {
       return sendJson(res, 403, { success: false, message: 'สิทธิ์เฉพาะแอดมินเท่านั้นค่ะ' });
     }
@@ -645,7 +819,7 @@ const server = http.createServer(async (req, res) => {
 
   // 18. POST /api/users/update — Edit user role, department, info & status (Admin only)
   if (method === 'POST' && reqPath === '/api/users/update') {
-    const session = getSession(req);
+    const session = await getSession(req);
     if (!session || session.user.role !== 'ADMIN') {
       return sendJson(res, 403, { success: false, message: 'สิทธิ์เฉพาะแอดมินเท่านั้นค่ะ' });
     }
@@ -683,7 +857,7 @@ const server = http.createServer(async (req, res) => {
 
   // 19. POST /api/users/reset-pin — Reset user PIN (Admin only)
   if (method === 'POST' && reqPath === '/api/users/reset-pin') {
-    const session = getSession(req);
+    const session = await getSession(req);
     if (!session || session.user.role !== 'ADMIN') {
       return sendJson(res, 403, { success: false, message: 'สิทธิ์เฉพาะแอดมินเท่านั้นค่ะ' });
     }
@@ -715,9 +889,9 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // 17. GET /api/stats/daily — Live Daily KPI from MySQL
+  // 20. GET /api/stats/daily — Live Daily KPI from MySQL
   if (method === 'GET' && reqPath === '/api/stats/daily') {
-    const session = getSession(req);
+    const session = await getSession(req);
     if (!session) return sendJson(res, 401, { success: false, message: 'Unauthorized' });
 
     try {
@@ -752,7 +926,7 @@ const server = http.createServer(async (req, res) => {
 
   // Protect /admin & /admin.html & /admin/
   if (reqPath === '/admin' || reqPath === '/admin.html' || reqPath === '/admin/' || reqPath === '/admin/index.html') {
-    const session = getSession(req);
+    const session = await getSession(req);
     if (!session) {
       res.writeHead(302, { 'Location': '/?error=login_required&from=admin' });
       res.end();
@@ -783,7 +957,7 @@ const server = http.createServer(async (req, res) => {
 
   // Protect /user & /user.html & /user/
   if (reqPath === '/user' || reqPath === '/user.html' || reqPath === '/user/' || reqPath === '/user/index.html') {
-    const session = getSession(req);
+    const session = await getSession(req);
     if (!session) {
       res.writeHead(302, { 'Location': '/?error=login_required&from=user' });
       res.end();

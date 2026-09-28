@@ -62,9 +62,41 @@ document.querySelectorAll('.modal-wrap').forEach(modal => {
   });
 });
 
+// Admin Smart Background Polling (Every 15s)
+let adminPollingTimer = null;
+
+async function runAdminBackgroundSync() {
+  const anyModalOpen = document.querySelector('.modal-wrap.show');
+  if (anyModalOpen) return; // Don't refresh while an edit modal is actively open
+
+  const viewCases = document.getElementById('viewCases');
+  const viewDaily = document.getElementById('viewDaily');
+  const viewRooms = document.getElementById('viewRooms');
+  const viewStaff = document.getElementById('viewStaff');
+
+  if (viewCases && viewCases.style.display !== 'none' && typeof renderMasterTable === 'function') {
+    renderMasterTable();
+  } else if (viewDaily && viewDaily.style.display !== 'none' && typeof renderDailyStats === 'function') {
+    renderDailyStats();
+  } else if (viewRooms && viewRooms.style.display !== 'none' && typeof renderRoomGrid === 'function') {
+    renderRoomGrid();
+  } else if (viewStaff && viewStaff.style.display !== 'none' && typeof renderStaffTable === 'function') {
+    renderStaffTable();
+  }
+}
+
+function startAdminAutoSync() {
+  if (adminPollingTimer) clearInterval(adminPollingTimer);
+  adminPollingTimer = setInterval(runAdminBackgroundSync, 15000);
+}
+
 // Run Admin Auth and Initial Render on Load
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', checkAdminAuth);
+  document.addEventListener('DOMContentLoaded', () => {
+    checkAdminAuth();
+    startAdminAutoSync();
+  });
 } else {
   checkAdminAuth();
+  startAdminAutoSync();
 }

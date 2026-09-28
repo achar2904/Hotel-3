@@ -27,6 +27,20 @@ function getStTh(s) {
 }
 
 /**
+ * Room status translation to Thai
+ * @param {string} st
+ * @returns {string}
+ */
+function getRoomStatusTh(st) {
+  if (st === 'AVAILABLE') return 'พร้อมขาย';
+  if (st === 'OCCUPIED') return 'มีแขกพัก';
+  if (st === 'CLEANING') return 'รอทำความสะอาด';
+  if (st === 'MAINTENANCE') return 'ปิดซ่อมบำรุง';
+  if (st === 'CLOSED') return 'ปิดชั่วคราว';
+  return st || '-';
+}
+
+/**
  * Department translation to Thai
  * @param {string} d
  * @returns {string}

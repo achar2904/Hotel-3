@@ -60,6 +60,24 @@ const CHIPS_DATA = {
   ]
 };
 
+// Thai translations for room statuses
+const ROOM_STATUS_TH = {
+  AVAILABLE: 'พร้อมขาย',
+  OCCUPIED: 'มีแขกพัก',
+  CLEANING: 'รอทำความสะอาด',
+  MAINTENANCE: 'ปิดซ่อมบำรุง',
+  CLOSED: 'ปิดชั่วคราว'
+};
+
+/**
+ * Returns Thai name for a given room status
+ * @param {string} st
+ * @returns {string}
+ */
+function getRoomStatusTh(st) {
+  return ROOM_STATUS_TH[st] || st || '-';
+}
+
 /**
  * Returns Thai name for a given department code
  * @param {string} deptCode

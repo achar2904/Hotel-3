@@ -55,18 +55,67 @@ function pickRoom(r) {
 }
 
 /**
- * Mock Camera Capture Section
+ * Real Camera & Photo Handling with HTML5 Canvas Compression
  */
-function mockCamera() {
-  hasPic = true;
-  const prev = document.getElementById('camPrev');
-  if (prev) prev.style.display = 'block';
+let realPhotoBase64 = null;
+
+function handleRealPhoto(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const maxDim = 1000;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height && width > maxDim) {
+        height = Math.round((height * maxDim) / width);
+        width = maxDim;
+      } else if (height > maxDim) {
+        width = Math.round((width * maxDim) / height);
+        height = maxDim;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      realPhotoBase64 = canvas.toDataURL('image/jpeg', 0.75);
+      hasPic = true;
+
+      const camImg = document.getElementById('camImg');
+      const prev = document.getElementById('camPrev');
+      if (camImg) camImg.src = realPhotoBase64;
+      if (prev) prev.style.display = 'block';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
 }
 
-function delPhoto() {
+function delRealPhoto() {
   hasPic = false;
+  realPhotoBase64 = null;
+  const fileInp = document.getElementById('inpPhotoFile');
+  if (fileInp) fileInp.value = '';
   const prev = document.getElementById('camPrev');
   if (prev) prev.style.display = 'none';
+  const camImg = document.getElementById('camImg');
+  if (camImg) camImg.src = '';
+}
+
+// Fallback compatibility
+function mockCamera() {
+  const fileInp = document.getElementById('inpPhotoFile');
+  if (fileInp) fileInp.click();
+}
+function delPhoto() {
+  delRealPhoto();
 }
 
 /**
@@ -94,7 +143,7 @@ async function doSubmit() {
         loc,
         subject: subj,
         deptTo: targetDept,
-        photo: hasPic ? 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80' : null
+        photo: hasPic ? realPhotoBase64 : null
       })
     });
 
@@ -117,7 +166,7 @@ async function doSubmit() {
 
     const inpSubject = document.getElementById('inpSubject');
     if (inpSubject) inpSubject.value = '';
-    delPhoto();
+    delRealPhoto();
   } catch (err) {
     alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ MySQL ได้ค่ะ');
   } finally {

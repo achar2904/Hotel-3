@@ -506,26 +506,34 @@
         </div>
       </div>
 
-      <!-- Admin Status Override Controls -->
-      <div id="modalAdminControls" style="background:#FFF7ED; border:1px solid #FED7AA; border-radius:var(--r-md); padding:16px; margin-bottom:16px;">
-        <div style="font-size:0.92rem; font-weight:700; color:#9A3412; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
-          กำหนดสถานะห้องพักใน MySQL (Admin Action Override)
+      <!-- Admin Status Override Controls (4 Real-World Hotel Statuses) -->
+      <div id="modalAdminControls" style="background:#F8FAFC; border:1px solid var(--border-subtle); border-radius:var(--r-md); padding:16px; margin-bottom:16px;">
+        <div style="font-size:0.92rem; font-weight:700; color:#1E293B; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+          🛠️ กำหนดสถานะห้องพักด้วยตนเอง (Admin Manual Override)
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
-          <label style="display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:var(--r-md); border:1px solid var(--border-subtle); background:#FFF; cursor:pointer; font-size:0.88rem; font-weight:600;">
+          <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:var(--r-md); border:1px solid #A7F3D0; background:#ECFDF5; cursor:pointer; font-size:0.86rem; font-weight:600;">
             <input type="radio" name="roomStatusRadio" value="AVAILABLE" id="radioAvail">
-            <span style="color:#10B981;">เปิดใช้งาน (AVAILABLE)</span>
+            <span style="color:#065F46;">🟢 พร้อมขาย (AVAILABLE)</span>
           </label>
-          <label style="display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:var(--r-md); border:1px solid var(--border-subtle); background:#FFF; cursor:pointer; font-size:0.88rem; font-weight:600;">
+          <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:var(--r-md); border:1px solid #BFDBFE; background:#EFF6FF; cursor:pointer; font-size:0.86rem; font-weight:600;">
+            <input type="radio" name="roomStatusRadio" value="OCCUPIED" id="radioOccupied">
+            <span style="color:#1E40AF;">🔵 มีแขกพัก (OCCUPIED)</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:var(--r-md); border:1px solid #FDE68A; background:#FFFBEB; cursor:pointer; font-size:0.86rem; font-weight:600;">
+            <input type="radio" name="roomStatusRadio" value="CLEANING" id="radioCleaning">
+            <span style="color:#92400E;">🟡 รอทำความสะอาด (CLEANING)</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:var(--r-md); border:1px solid #FECACA; background:#FEF2F2; cursor:pointer; font-size:0.86rem; font-weight:600;">
             <input type="radio" name="roomStatusRadio" value="MAINTENANCE" id="radioMaint">
-            <span style="color:#EF4444;">ปิดซ่อม (MAINTENANCE)</span>
+            <span style="color:#991B1B;">🔴 ปิดซ่อมบำรุง (MAINTENANCE)</span>
           </label>
         </div>
         <div class="form-ctrl" style="margin-bottom:12px;">
-          <label style="font-size:0.82rem; font-weight:600; color:#7C2D12;">หมายเหตุการเปลี่ยนสถานะ (บันทึกลงฐานข้อมูล):</label>
-          <input type="text" id="modalStatusReasonInp" placeholder="เช่น แอร์ซ่อมเสร็จแล้วพร้อมเปิดขาย, สั่งปิดทาสีผนัง..." style="background:#FFF;">
+          <label style="font-size:0.82rem; font-weight:600; color:#475569;">หมายเหตุ / เหตุผลประกอบ (ระบุตามเหตุการณ์จริง):</label>
+          <input type="text" id="modalStatusReasonInp" placeholder="เช่น แอร์ซ่อมเสร็จแล้วพร้อมเปิดขาย, มีแขก VIP พัก, สั่งปิดทาสีผนัง..." style="background:#FFF;">
         </div>
-        <button class="btn-primary" style="width:100%; background:#C2410C;" onclick="saveRoomStatusChange()">บันทึกการเปลี่ยนแปลงสถานะห้องพักลง MySQL</button>
+        <button class="btn-primary" style="width:100%; background:#334155;" onclick="saveRoomStatusChange()">💾 บันทึกการเปลี่ยนแปลงสถานะห้องพักลง MySQL</button>
       </div>
 
       <!-- Owner Notice in Modal -->

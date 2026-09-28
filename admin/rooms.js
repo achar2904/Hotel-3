@@ -50,9 +50,20 @@ function filterRoomsUI() {
 
   filtered.forEach(r => {
     const btn = document.createElement('button');
-    const isMaint = r.status === 'MAINTENANCE';
-    btn.className = `room-btn-tile ${isMaint ? 'maintenance' : 'available'}`;
-    btn.title = `ห้อง ${r.room_no} (ชั้น ${r.floor}) - ${isMaint ? 'ปิดซ่อม: ' + (r.closed_reason || '') : 'พร้อมใช้งาน'}`;
+    let statusClass = 'available';
+    let statusTh = 'พร้อมใช้งาน';
+    if (r.status === 'OCCUPIED') {
+      statusClass = 'occupied';
+      statusTh = 'มีแขกพัก';
+    } else if (r.status === 'CLEANING') {
+      statusClass = 'cleaning';
+      statusTh = 'รอทำความสะอาด';
+    } else if (r.status === 'MAINTENANCE' || r.status === 'CLOSED') {
+      statusClass = 'maintenance';
+      statusTh = 'ปิดซ่อม: ' + (r.closed_reason || '');
+    }
+    btn.className = `room-btn-tile ${statusClass}`;
+    btn.title = `ห้อง ${r.room_no} (ชั้น ${r.floor}) - ${statusTh}`;
     btn.onclick = () => openRoomDetail(r.room_no);
 
     btn.innerHTML = `
@@ -76,7 +87,7 @@ function setRoomFloorFilter(f, el) {
 function setRoomStatusFilter(s, el) {
   currentRoomStatus = s;
   document.querySelectorAll('#viewRooms .filter-pill').forEach(b => {
-    if (b.innerText.includes('ทั้งหมด') || b.innerText.includes('พร้อมใช้') || b.innerText.includes('ปิดซ่อม')) {
+    if (b.innerText.includes('ทั้งหมด') || b.innerText.includes('พร้อมใช้') || b.innerText.includes('ปิดซ่อม') || b.innerText.includes('แขกพัก') || b.innerText.includes('สะอาด')) {
       b.classList.remove('active');
     }
   });
@@ -95,12 +106,16 @@ function openRoomDetail(roomNo) {
 
   const badgeContainer = document.getElementById('modalRoomStatusBadge');
   if (r.status === 'AVAILABLE') {
-    badgeContainer.innerHTML = `<span class="tag tag-CLOSED" style="font-size:0.85rem; padding:4px 10px;">พร้อมใช้งาน (AVAILABLE)</span>`;
+    badgeContainer.innerHTML = `<span class="tag tag-CLOSED" style="font-size:0.85rem; padding:4px 10px; background:#ECFDF5; color:#065F46; border:1px solid #A7F3D0;">พร้อมขาย (AVAILABLE)</span>`;
+  } else if (r.status === 'OCCUPIED') {
+    badgeContainer.innerHTML = `<span class="tag" style="font-size:0.85rem; padding:4px 10px; background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;">มีแขกพัก (OCCUPIED)</span>`;
+  } else if (r.status === 'CLEANING') {
+    badgeContainer.innerHTML = `<span class="tag" style="font-size:0.85rem; padding:4px 10px; background:#FFFBEB; color:#92400E; border:1px solid #FDE68A;">รอทำความสะอาด (CLEANING)</span>`;
   } else {
-    badgeContainer.innerHTML = `<span class="tag tag-NEW" style="font-size:0.85rem; padding:4px 10px;">ปิดซ่อมบำรุง (MAINTENANCE)</span>`;
+    badgeContainer.innerHTML = `<span class="tag tag-NEW" style="font-size:0.85rem; padding:4px 10px; background:#FEF2F2; color:#991B1B; border:1px solid #FECACA;">ปิดซ่อมบำรุง (MAINTENANCE)</span>`;
   }
 
-  document.getElementById('modalRoomReason').innerHTML = `<strong>สาเหตุ / บันทึกล่าสุด:</strong> ${r.closed_reason || (r.status === 'AVAILABLE' ? 'ห้องว่าง สภาพสมบูรณ์ พร้อมเปิดรับแขก' : 'ปิดซ่อมบำรุง')}`;
+  document.getElementById('modalRoomReason').innerHTML = `<strong>สาเหตุ / บันทึกล่าสุด:</strong> ${r.closed_reason || (r.status === 'AVAILABLE' ? 'ห้องว่าง สภาพสมบูรณ์ พร้อมเปิดรับแขก' : '-')}`;
   document.getElementById('modalRoomUpdated').innerText = `อัปเดตล่าสุด: ${r.updated_time || 'วันนี้'}`;
 
   const adminCtrl = document.getElementById('modalAdminControls');
@@ -111,13 +126,19 @@ function openRoomDetail(roomNo) {
   } else {
     adminCtrl.style.display = 'block';
     ownerNotice.style.display = 'none';
-    document.getElementById('radioAvail').checked = (r.status === 'AVAILABLE');
-    document.getElementById('radioMaint').checked = (r.status === 'MAINTENANCE');
+    const rAvail = document.getElementById('radioAvail');
+    const rOccupied = document.getElementById('radioOccupied');
+    const rCleaning = document.getElementById('radioCleaning');
+    const rMaint = document.getElementById('radioMaint');
+    if (rAvail) rAvail.checked = (r.status === 'AVAILABLE');
+    if (rOccupied) rOccupied.checked = (r.status === 'OCCUPIED');
+    if (rCleaning) rCleaning.checked = (r.status === 'CLEANING');
+    if (rMaint) rMaint.checked = (r.status === 'MAINTENANCE' || r.status === 'CLOSED');
     document.getElementById('modalStatusReasonInp').value = r.closed_reason || '';
   }
 
   // Filter cases for this room
-  const roomCases = cachedCases.filter(c => c.loc && (c.loc.includes(roomNo) || c.loc.includes(' ' + roomNo)));
+  const roomCases = cachedCases.filter(c => (c.roomNo && String(c.roomNo) === String(roomNo)) || (c.loc && (c.loc.includes(roomNo) || c.loc.includes(' ' + roomNo))));
   const timelineBox = document.getElementById('modalIncidentTimeline');
   timelineBox.innerHTML = '';
 
@@ -162,8 +183,13 @@ async function saveRoomStatusChange() {
   const radio = document.querySelector('input[name="roomStatusRadio"]:checked');
   const newStatus = radio ? radio.value : 'AVAILABLE';
   const reasonInp = document.getElementById('modalStatusReasonInp').value.trim();
-  const defaultReason = (newStatus === 'AVAILABLE') ? 'เปิดห้องพักพร้อมใช้งาน สภาพสมบูรณ์' : 'คำสั่งแอดมิน: ปิดซ่อมบำรุง';
-  const reason = reasonInp || defaultReason;
+  const statusLabels = {
+    AVAILABLE: 'เปิดห้องพักพร้อมขาย สภาพสมบูรณ์',
+    OCCUPIED: 'มีแขกเข้าพัก (Check-in)',
+    CLEANING: 'ห้องรอแม่บ้านทำความสะอาด',
+    MAINTENANCE: 'คำสั่งแอดมิน: ปิดซ่อมบำรุง'
+  };
+  const reason = reasonInp || statusLabels[newStatus] || 'อัปเดตสถานะห้องพักโดยแอดมิน';
 
   const res = await fetch('/api/rooms/status', {
     method: 'POST',

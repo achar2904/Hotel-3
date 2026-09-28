@@ -76,6 +76,44 @@
   background: #10B981;
 }
 
+/* Room Status: Occupied (Blue) */
+.room-btn-tile.occupied {
+  background: #EFF6FF;
+  border-color: #BFDBFE;
+}
+
+.room-btn-tile.occupied:hover {
+  border-color: #3B82F6;
+  background: #DBEAFE;
+}
+
+.room-btn-tile.occupied .room-num {
+  color: #1E40AF;
+}
+
+.room-btn-tile.occupied .room-dot {
+  background: #2563EB;
+}
+
+/* Room Status: Cleaning (Amber) */
+.room-btn-tile.cleaning {
+  background: #FFFBEB;
+  border-color: #FDE68A;
+}
+
+.room-btn-tile.cleaning:hover {
+  border-color: #F59E0B;
+  background: #FEF3C7;
+}
+
+.room-btn-tile.cleaning .room-num {
+  color: #92400E;
+}
+
+.room-btn-tile.cleaning .room-dot {
+  background: #D97706;
+}
+
 /* Room Status: Maintenance (Red with Pulse Animation) */
 .room-btn-tile.maintenance {
   background: #FEF2F2;
